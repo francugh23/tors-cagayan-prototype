@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+  SIGNATORY
+}
+
+enum Office {
+  SDO
+  School
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  name                String?
+  email               String?  @unique
+  password            String?
+  signature           String?
+  role                UserRole @default(CLIENT)
+  positionDesignation String?
+  stationId           String   @map("station_id")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  station        Station          @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  TravelOrder    TravelOrder[]
+  ActionsHistory ActionsHistory[]
+
+  @@map("users")
+}
+
+model Station {
+  id        String   @id @default(cuid())
+  office    Office   @default(School)
+  unit      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User[]
+
+  @@map("stations")
+}
+
+model TravelOrder {
+  id                           String    @id @default(cuid())
+  code                         String    @unique
+  userId                       String    @map("user_id")
+  purpose                      String
+  host                         String
+  inclusiveDates               String
+  destination                  String
+  fundSource                   String
+  additionalParticipants       String?   @db.Text
+  attachedFile                 String
+  isRecommendingApprovalSigned Boolean   @default(false)
+  isFinalApprovalSigned        Boolean   @default(false)
+  recommendingApprovalAt       DateTime?
+  finalApprovalAt              DateTime?
+  employeeSignature            String?
+  recommendingSignature        String?
+  finalSignature               String?
+  status                       String?
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ActionsHistory ActionsHistory[]
+
+  @@map("travel_orders")
+}
+
+model ActionsHistory {
+  id            String   @id @default(cuid())
+  code          String   
+  travelOrderId String   @map("travel_order_id")
+  action        String
+  remarks       String?
+  userId        String   @map("user_id")
+  createdAt     DateTime @default(now())
+
+  travelOrder TravelOrder @relation(fields: [travelOrderId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("actions_history")
+}
