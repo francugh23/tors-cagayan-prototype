@@ -42,8 +42,8 @@ export async function getCurrentUser(): Promise<UserResponse> {
         signature: true,
         password: true,
         role: true,
-        positionDesignation: true,
         stationId: true,
+        positionId: true,
       },
     });
 
@@ -60,7 +60,6 @@ export async function getCurrentUser(): Promise<UserResponse> {
     // const imageUrl = user.image ? `/images/${user.image}` : null;
 
     const uid = user.id;
-
     return { user, uid };
   } catch (error) {
     await prisma.$disconnect();

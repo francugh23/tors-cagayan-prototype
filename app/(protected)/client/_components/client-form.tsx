@@ -24,18 +24,13 @@ import { useForm } from "react-hook-form";
 import NonFormInput from "../../../../components/custom/nonform-input";
 
 import { useEffect, useState } from "react";
-import { fetchStationById } from "@/data/stations";
+import { fetchStationAndPositionByIds } from "@/data/stations";
 import { TravelFormSchema } from "@/schemas";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Separator } from "../../../../components/ui/separator";
 import { Input } from "../../../../components/ui/input";
 import { Textarea } from "../../../../components/ui/textarea";
-import {
-  FileState,
-  MultiFileDropzone,
-} from "../../../../components/multi-file-zropzone";
-import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "../../../../components/ui/button";
 import { BadgeCheck, TriangleAlert } from "lucide-react";
 import { createTravelOrder } from "@/actions/travel-order";
@@ -47,37 +42,21 @@ interface ClientFormProps {
 }
 
 export function ClientForm({ user, label }: ClientFormProps) {
-  const { edgestore } = useEdgeStore();
-
-  const [station, setStation] = useState<any>(null);
-  const [fileStates, setFileStates] = useState<FileState[]>([]);
-  const [url, setUrl] = useState<string>();
-
-  function updateFileProgress(key: string, progress: FileState["progress"]) {
-    setFileStates((fileStates) => {
-      const newFileStates = structuredClone(fileStates);
-      const fileState = newFileStates.find(
-        (fileState) => fileState.key === key
-      );
-      if (fileState) {
-        fileState.progress = progress;
-      }
-      return newFileStates;
-    });
-    1;
-  }
+  const [designation, setDesignation] = useState<any>(null);
+  //const [fileStates, setFileStates] = useState<FileState[]>([]);
+  //const [url, setUrl] = useState<string>();
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetchStationById(user?.user?.stationId);
-        setStation(res);
+        const res = await fetchStationAndPositionByIds(user?.user?.stationId, user?.user?.positionId);
+        setDesignation(res);
       } catch (e) {
         return null;
       }
     }
     fetchData();
-  }, [user?.user?.stationId]);
+  }, [user?.user?.stationId, user?.user?.positionId]);
 
   const form = useForm<z.infer<typeof TravelFormSchema>>({
     resolver: zodResolver(TravelFormSchema),
@@ -95,10 +74,6 @@ export function ClientForm({ user, label }: ClientFormProps) {
   async function onSubmit(data: z.infer<typeof TravelFormSchema>) {
     console.log("Form data:", data);
     try {
-      if (url) {
-        await edgestore.myPublicFiles.confirmUpload({ url });
-      }
-
       const result = await createTravelOrder(data);
 
       if (result?.error) {
@@ -166,7 +141,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 <div className="space-y-2">
                   <NonFormInput
                     label="Position/Designation"
-                    defaultValue={user?.user?.positionDesignation || ""}
+                    defaultValue={designation?.position?.title || ""}
                     readOnly
                     className="text-sm font-medium text-right"
                   />
@@ -174,7 +149,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 <div className="space-y-2">
                   <NonFormInput
                     label="Office"
-                    defaultValue={station?.office || ""}
+                    defaultValue={designation?.station?.office || ""}
                     readOnly
                     className="text-sm font-medium text-right"
                   />
@@ -182,7 +157,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 <div className="space-y-2">
                   <NonFormInput
                     label="Permanent Station"
-                    defaultValue={station?.unit || ""}
+                    defaultValue={designation?.station?.unit || ""}
                     readOnly
                     className="text-sm font-medium text-right"
                   />
@@ -198,60 +173,10 @@ export function ClientForm({ user, label }: ClientFormProps) {
                       <FormControl>
                         <Card className="p-4">
                           <div className="flex flex-col items-center gap-2">
-                            <MultiFileDropzone
-                              className="h-[120px]"
-                              value={fileStates}
-                              onChange={(files) => {
-                                setFileStates(files);
-                              }}
-                              dropzoneOptions={{
-                                maxSize: 1024 * 1024 * 40, // 40MB
-                                maxFiles: 1,
-                              }}
-                              onFilesAdded={async (addedFiles) => {
-                                setFileStates([...fileStates, ...addedFiles]);
-                                await Promise.all(
-                                  addedFiles.map(async (addedFileState) => {
-                                    try {
-                                      const res =
-                                        await edgestore.myPublicFiles.upload({
-                                          input: { type: user?.user?.role },
-                                          file: addedFileState.file,
-                                          options: {
-                                            temporary: true,
-                                          },
-                                          onProgressChange: async (
-                                            progress
-                                          ) => {
-                                            updateFileProgress(
-                                              addedFileState.key,
-                                              progress
-                                            );
-                                            if (progress === 100) {
-                                              await new Promise((resolve) =>
-                                                setTimeout(resolve, 1000)
-                                              );
-                                              updateFileProgress(
-                                                addedFileState.key,
-                                                "COMPLETE"
-                                              );
-                                            }
-                                          },
-                                        });
-                                      setUrl(res.url);
-                                      onChange(res.url);
-                                    } catch (err) {
-                                      updateFileProgress(
-                                        addedFileState.key,
-                                        "ERROR"
-                                      );
-                                    }
-                                  })
-                                );
-                              }}
-                            />
+                            {/* Removed MultiFileDropzone and edgestore upload logic */}
                             <p className="text-xs text-muted-foreground">
-                              Please attach your supporting document.
+                              Please attach your supporting document (upload
+                              logic TBD).
                             </p>
                           </div>
                         </Card>
@@ -367,7 +292,6 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 )}
                 onClick={() => {
                   form.reset();
-                  setUrl("");
                 }}
               >
                 Reset

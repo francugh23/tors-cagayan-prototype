@@ -1,17 +1,29 @@
 -- CreateTable
 CREATE TABLE `users` (
     `id` VARCHAR(191) NOT NULL,
-    `name` VARCHAR(191) NULL,
-    `email` VARCHAR(191) NULL,
-    `password` VARCHAR(191) NULL,
-    `signature` VARCHAR(191) NULL,
-    `role` ENUM('ADMIN', 'CLIENT', 'SIGNATORY') NOT NULL DEFAULT 'CLIENT',
-    `positionDesignation` VARCHAR(191) NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `password` VARCHAR(191) NOT NULL,
+    `signature` VARCHAR(191) NOT NULL,
+    `role` ENUM('ADMIN', 'CLIENT') NOT NULL DEFAULT 'CLIENT',
+    `position_id` VARCHAR(191) NOT NULL,
     `station_id` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `users_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Position` (
+    `id` VARCHAR(191) NOT NULL,
+    `code` VARCHAR(191) NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `recommending` VARCHAR(191) NOT NULL,
+    `finalApproval` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `Position_code_key`(`code`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -46,6 +58,7 @@ CREATE TABLE `travel_orders` (
     `recommendingSignature` VARCHAR(191) NULL,
     `finalSignature` VARCHAR(191) NULL,
     `status` VARCHAR(191) NULL,
+    `finalPdfUrl` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -68,6 +81,9 @@ CREATE TABLE `actions_history` (
 
 -- AddForeignKey
 ALTER TABLE `users` ADD CONSTRAINT `users_station_id_fkey` FOREIGN KEY (`station_id`) REFERENCES `stations`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `users` ADD CONSTRAINT `users_position_id_fkey` FOREIGN KEY (`position_id`) REFERENCES `Position`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `travel_orders` ADD CONSTRAINT `travel_orders_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

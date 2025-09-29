@@ -10,7 +10,6 @@ datasource db {
 enum UserRole {
   ADMIN
   CLIENT
-  SIGNATORY
 }
 
 enum Office {
@@ -18,23 +17,38 @@ enum Office {
   School
 }
 
-model User {
-  id                  String   @id @default(cuid())
-  name                String?
-  email               String?  @unique
-  password            String?
-  signature           String?
-  role                UserRole @default(CLIENT)
-  positionDesignation String?
-  stationId           String   @map("station_id")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+enum RequestType {
+  EXTERNAL_ELEM
+}
 
-  station        Station          @relation(fields: [stationId], references: [id], onDelete: Cascade)
-  TravelOrder    TravelOrder[]
-  ActionsHistory ActionsHistory[]
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  signature  String
+  role       UserRole @default(CLIENT)
+  positionId String   @map("position_id")
+  stationId  String   @map("station_id")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  station     Station       @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  TravelOrder TravelOrder[]
+  Actions     Actions[]
+  Position    Position      @relation(fields: [positionId], references: [id])
 
   @@map("users")
+}
+
+model Position {
+  id            String @id @default(cuid())
+  code          String @unique
+  title         String
+  recommending  String
+  finalApproval String
+
+  User User[]
 }
 
 model Station {
@@ -67,19 +81,20 @@ model TravelOrder {
   recommendingSignature        String?
   finalSignature               String?
   status                       String?
+  finalPdfUrl                  String?
   createdAt                    DateTime  @default(now())
   updatedAt                    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  ActionsHistory ActionsHistory[]
+  Actions Actions[]
 
   @@map("travel_orders")
 }
 
-model ActionsHistory {
+model Actions {
   id            String   @id @default(cuid())
-  code          String   
+  code          String
   travelOrderId String   @map("travel_order_id")
   action        String
   remarks       String?

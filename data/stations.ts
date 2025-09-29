@@ -17,19 +17,26 @@ export async function fetchStations() {
   }
 }
 
-export async function fetchStationById(id: string) {
+export async function fetchStationAndPositionByIds(id: string, positionId: string) {
   try {
     await prisma.$connect();
 
-    const data = await prisma.station.findUnique({
+    const station = await prisma.station.findUnique({
       where: { id: id },
       select: {
         office: true,
         unit: true,
-      }
+      },
     });
 
-    return data;
+    const position = await prisma.position.findUnique({
+      where: { id: positionId },
+      select: {
+        title: true,
+      },
+    });
+
+    return { station, position };
   } catch (e) {
     return { error: "Failed to retrieve station!" };
   } finally {
