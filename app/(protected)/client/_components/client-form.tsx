@@ -35,6 +35,7 @@ import { Button } from "../../../../components/ui/button";
 import { BadgeCheck, TriangleAlert } from "lucide-react";
 import { createTravelOrder } from "@/actions/travel-order";
 import { toast } from "sonner";
+import { SingleFileUpload } from "./single-file-upload";
 
 interface ClientFormProps {
   user?: any;
@@ -171,15 +172,12 @@ export function ClientForm({ user, label }: ClientFormProps) {
                         Supporting Document
                       </FormLabel>
                       <FormControl>
-                        <Card className="p-4">
-                          <div className="flex flex-col items-center gap-2">
-                            {/* Removed MultiFileDropzone and edgestore upload logic */}
-                            <p className="text-xs text-muted-foreground">
-                              Please attach your supporting document (upload
-                              logic TBD).
-                            </p>
-                          </div>
-                        </Card>
+                        <SingleFileUpload
+                          value={value as unknown as File | null}
+                          onChange={onChange}
+                          accept="*/*"
+                          maxSize={2 * 1024 * 1024}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
