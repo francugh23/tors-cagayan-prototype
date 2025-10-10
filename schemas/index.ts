@@ -1,11 +1,11 @@
-import { Office, UserRole } from "@prisma/client";
+import { UserRole } from '@prisma/client';
 import * as z from "zod";
 
 export const SettingsSchema = z
   .object({
     name: z.optional(z.string()),
     isTwoFactorEnabled: z.optional(z.boolean()),
-    role: z.enum([UserRole.ADMIN, UserRole.CLIENT, UserRole.SIGNATORY]),
+    role: z.enum([UserRole.ADMIN, UserRole.ACCOUNT_HOLDER]),
     email: z.optional(z.string().email()),
     password: z.optional(z.string().min(6)),
     newPassword: z.optional(z.string().min(6)),
@@ -90,13 +90,14 @@ export const AddUserSchema = z.object({
 });
 
 export const TravelFormSchema = z.object({
-  additionalParticipants: z.optional(z.string()),
+  requester_name: z.string().min(1, { message: "Requester's name is required." }),
+  position: z.string().min(1, { message: "Position is required." }),
   purpose: z.string().min(1, { message: "Purpose is required." }),
   host: z.string().min(1, { message: "Host is required." }),
-  inclusiveDates: z.string().min(1, { message: "Inclusive Dates is required." }),
+  travel_period: z.string().min(1, { message: "Inclusive Dates is required." }),
   destination: z.string().min(1, { message: "Destination is required." }),
-  fundSource: z.string().min(1, { message: "Fund Source is required." }),
-  attachedFile: z.string().min(1, {message: "Please attach a file."}),
+  fund_source: z.string().min(1, { message: "Fund Source is required." }),
+  attached_file: z.instanceof(File, { message: "Attachment is required." }),
 });
 
 export const RemarksSchema = z.object({

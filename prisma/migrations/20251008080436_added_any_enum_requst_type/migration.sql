@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `TravelOrder` MODIFY `request_type` ENUM('WITHIN_DIVISION', 'OUTSIDE_DIVISION', 'ANY') NOT NULL;
+
+-- AlterTable
+ALTER TABLE `authorities` MODIFY `request_type` ENUM('WITHIN_DIVISION', 'OUTSIDE_DIVISION', 'ANY') NOT NULL;

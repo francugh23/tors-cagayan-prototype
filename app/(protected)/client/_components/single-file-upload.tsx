@@ -17,7 +17,7 @@ interface SingleFileUploadProps {
 export function SingleFileUpload({
   value,
   onChange,
-  accept = "*/*",
+  accept = "/pdf",
   maxSize = 2 * 1024 * 1024,
   className,
 }: SingleFileUploadProps) {

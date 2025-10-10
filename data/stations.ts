@@ -1,13 +1,13 @@
 "use server";
 
 import prisma from "@/lib/db";
-import { Office } from "@prisma/client";
+import { DesignationType } from "@prisma/client";
 
 export async function fetchStations() {
   try {
     await prisma.$connect();
 
-    const stations = await prisma.station.findMany();
+    const stations = await prisma.designation.findMany();
 
     return stations;
   } catch (e) {
@@ -17,26 +17,19 @@ export async function fetchStations() {
   }
 }
 
-export async function fetchStationAndPositionByIds(id: string, positionId: string) {
+export async function fetchDesignationById(id: string) {
   try {
     await prisma.$connect();
 
-    const station = await prisma.station.findUnique({
+    const designation = await prisma.designation.findUnique({
       where: { id: id },
       select: {
-        office: true,
-        unit: true,
+        type: true,
+        code: true,
       },
     });
 
-    const position = await prisma.position.findUnique({
-      where: { id: positionId },
-      select: {
-        title: true,
-      },
-    });
-
-    return { station, position };
+    return designation;
   } catch (e) {
     return { error: "Failed to retrieve station!" };
   } finally {
@@ -44,12 +37,12 @@ export async function fetchStationAndPositionByIds(id: string, positionId: strin
   }
 }
 
-export async function fetchStationsByOffice(office: Office) {
+export async function fetchStationsByOffice(office: DesignationType) {
   try {
     await prisma.$connect();
 
-    const stations = await prisma.station.findMany({
-      where: { office: office },
+    const stations = await prisma.designation.findMany({
+      where: { type: office },
     });
 
     return stations;

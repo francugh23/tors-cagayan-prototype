@@ -8,7 +8,6 @@ interface User {
   id: string;
   name: string | null;
   email: string | null;
-  // image: string | null;
   password: string | null;
   role: UserRole;
 }
@@ -38,12 +37,10 @@ export async function getCurrentUser(): Promise<UserResponse> {
         id: true,
         name: true,
         email: true,
-        // image: true,
-        signature: true,
         password: true,
         role: true,
-        stationId: true,
-        positionId: true,
+        designation_id: true,
+        position_id: true,
       },
     });
 

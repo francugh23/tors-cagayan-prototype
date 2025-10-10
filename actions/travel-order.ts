@@ -5,9 +5,7 @@ import prisma from "@/lib/db";
 import { RemarksSchema, TravelFormSchema } from "@/schemas";
 import { getCurrentUser } from "./server";
 
-export const createTravelOrder = async (
-  values: z.infer<typeof TravelFormSchema>
-) => {
+export const createTravelOrder = async (values: any) => {
   const generateCode = async () => {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, "0");
@@ -43,46 +41,41 @@ export const createTravelOrder = async (
   }
 
   const {
+    requester_name,
+    position,
     purpose,
     host,
-    inclusiveDates,
+    travel_period,
     destination,
-    fundSource,
-    attachedFile,
-    additionalParticipants,
+    fund_source,
+    attached_file,
   } = validatedFields.data;
 
   const user = await getCurrentUser();
 
-  const signature = await prisma.user.findUnique({
-    where: {
-      id: user?.user?.id as string,
-    },
-  });
-
   try {
-    const travelOder = await prisma.travelOrder.create({
+    const travel_order = await prisma.travelOrder.create({
       data: {
         code: await generateCode(),
-        userId: user?.user?.id as string,
+        request_type: "WITHIN_DIVISION",
+        requester_id: user?.user?.id as string,
+        requester_name: requester_name,
+        position: position,
         purpose: purpose,
         host: host,
-        inclusiveDates: inclusiveDates,
+        travel_period: travel_period,
         destination: destination,
-        fundSource: fundSource,
-        additionalParticipants: additionalParticipants || "",
-        attachedFile: attachedFile as string,
-        employeeSignature: signature?.signature as string,
-        status: "Pending",
+        fund_source: fund_source,
+        attached_file: attached_file,
       },
     });
 
-    await prisma.actionsHistory.create({
+    await prisma.actions.create({
       data: {
-        code: `REQUESTED-${travelOder.code}`,
-        travelOrderId: travelOder.id,
+        code: `REQUESTED-${travel_order.code}`,
+        travel_order_id: travel_order.id,
         action: "Requested a travel order.",
-        userId: user?.user?.id as string,
+        user_id: user?.user?.id as string,
         createdAt: new Date(),
       },
     });
@@ -179,7 +172,6 @@ export const updateTravelRequestOrderById = async (
         status: true,
       },
     });
-
 
     if (designation?.positionDesignation === "ASDS") {
       await prisma.travelOrder.update({

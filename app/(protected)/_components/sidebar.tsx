@@ -82,7 +82,7 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {user?.user?.role === UserRole.CLIENT && (
+        {user?.user?.role === UserRole.ACCOUNT_HOLDER && (
           <SidebarGroup>
             <SidebarGroupLabel>Navigation</SidebarGroupLabel>
             <SidebarGroupContent>

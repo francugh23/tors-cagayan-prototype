@@ -37,7 +37,6 @@ import {
   updateTravelRequestOrderById,
 } from "@/actions/travel-order";
 import { RemarksModal } from "./travel-request-remarks";
-import { useEdgeStore } from "@/lib/edgestore";
 
 interface ViewTravelRequestProps {
   trigger: React.ReactNode;
@@ -51,7 +50,6 @@ export function ViewTravelRequestDialog({
   travelDetails,
 }: ViewTravelRequestProps) {
   const user = useCurrentUser();
-  const { edgestore } = useEdgeStore();
 
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<any>();

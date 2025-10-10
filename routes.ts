@@ -2,7 +2,7 @@
  * An array of routes that do not require authentication
  * @type {string[]}
  */
-export const publicRoutes = ["/", "/auth/new-verification"];
+export const publicRoutes = ["/", "/auth/new-verification", "/api/test-n8n"];
 
 /**
  * An array of routes that require authentication
@@ -29,7 +29,7 @@ export const apiAuthEdgeStore = "/api/edgestore"
 export const DEFAULT_LOGIN_REDIRECT = (role: string): string => {
   if (role === "ADMIN") {
     return "/users";
-  } else if (role === "CLIENT") {
+  } else if (role === "ACCOUNT_HOLDER") {
     return "/client";
   } else if (role === "SIGNATORY") {
     return "/dashboard";

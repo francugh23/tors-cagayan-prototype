@@ -27,7 +27,6 @@ import { useForm } from "react-hook-form";
 import { RemarksSchema } from "@/schemas";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEdgeStore } from "@/lib/edgestore";
 
 interface RemarksModalProps {
   user: any;
@@ -41,7 +40,6 @@ export function RemarksModal({
   onUpdate,
 }: RemarksModalProps) {
   const [open, setOpen] = useState(false);
-  const { edgestore } = useEdgeStore();
 
   const form = useForm<z.infer<typeof RemarksSchema>>({
     resolver: zodResolver(RemarksSchema),
@@ -67,9 +65,6 @@ export function RemarksModal({
           description: result?.success || "Travel order denied!",
           duration: 5000,
           icon: <BadgeCheck className="text-green-500" size={20} />,
-        });
-        await edgestore.myPublicFiles.delete({
-          url: travelDetails?.attachedFile as string,
         });
         onUpdate();
         setOpen(false);
