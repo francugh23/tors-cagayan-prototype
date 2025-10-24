@@ -1,62 +1,27 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE `users` (
+    `id` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `password` VARCHAR(191) NOT NULL,
+    `role` ENUM('ADMIN', 'ACCOUNT_HOLDER', 'SIGNATORY') NOT NULL DEFAULT 'ACCOUNT_HOLDER',
+    `designation_id` VARCHAR(191) NOT NULL,
+    `position_id` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
-  - You are about to drop the column `signature` on the `users` table. All the data in the column will be lost.
-  - You are about to drop the column `station_id` on the `users` table. All the data in the column will be lost.
-  - You are about to alter the column `role` on the `users` table. The data in that column could be lost. The data in that column will be cast from `Enum(EnumId(1))` to `Enum(EnumId(0))`.
-  - You are about to drop the `Position` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `actions_history` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `stations` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `travel_orders` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `designation_id` to the `users` table without a default value. This is not possible if the table is not empty.
-
-*/
--- DropForeignKey
-ALTER TABLE `actions_history` DROP FOREIGN KEY `actions_history_travel_order_id_fkey`;
-
--- DropForeignKey
-ALTER TABLE `actions_history` DROP FOREIGN KEY `actions_history_user_id_fkey`;
-
--- DropForeignKey
-ALTER TABLE `travel_orders` DROP FOREIGN KEY `travel_orders_user_id_fkey`;
-
--- DropForeignKey
-ALTER TABLE `users` DROP FOREIGN KEY `users_position_id_fkey`;
-
--- DropForeignKey
-ALTER TABLE `users` DROP FOREIGN KEY `users_station_id_fkey`;
-
--- DropIndex
-DROP INDEX `users_position_id_fkey` ON `users`;
-
--- DropIndex
-DROP INDEX `users_station_id_fkey` ON `users`;
-
--- AlterTable
-ALTER TABLE `users` DROP COLUMN `signature`,
-    DROP COLUMN `station_id`,
-    ADD COLUMN `designation_id` VARCHAR(191) NOT NULL,
-    MODIFY `role` ENUM('ADMIN', 'ACCOUNT_HOLDER', 'SIGNATORY') NOT NULL DEFAULT 'ACCOUNT_HOLDER',
-    MODIFY `position_id` VARCHAR(191) NULL;
-
--- DropTable
-DROP TABLE `Position`;
-
--- DropTable
-DROP TABLE `actions_history`;
-
--- DropTable
-DROP TABLE `stations`;
-
--- DropTable
-DROP TABLE `travel_orders`;
+    UNIQUE INDEX `users_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `TravelOrder` (
     `id` VARCHAR(191) NOT NULL,
     `code` VARCHAR(191) NOT NULL,
-    `request_type` ENUM('WITHIN_DIVISION', 'OUTSIDE_DIVISION') NOT NULL,
+    `request_type` ENUM('WITHIN_DIVISION', 'OUTSIDE_DIVISION', 'ANY') NOT NULL,
     `requester_id` VARCHAR(191) NOT NULL,
+    `requester_name` VARCHAR(191) NOT NULL,
+    `position` VARCHAR(191) NOT NULL,
     `purpose` VARCHAR(191) NOT NULL,
     `host` VARCHAR(191) NOT NULL,
     `travel_period` VARCHAR(191) NOT NULL,
@@ -64,6 +29,8 @@ CREATE TABLE `TravelOrder` (
     `fund_source` VARCHAR(191) NOT NULL,
     `attached_file` VARCHAR(191) NOT NULL,
     `authority_id` VARCHAR(191) NOT NULL,
+    `recommending_status` VARCHAR(191) NULL,
+    `approving_status` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -99,7 +66,7 @@ CREATE TABLE `positions` (
 -- CreateTable
 CREATE TABLE `authorities` (
     `id` VARCHAR(191) NOT NULL,
-    `request_type` ENUM('WITHIN_DIVISION', 'OUTSIDE_DIVISION') NOT NULL,
+    `request_type` ENUM('WITHIN_DIVISION', 'OUTSIDE_DIVISION', 'ANY') NOT NULL,
     `designation_type` ENUM('SDO', 'ELEMENTARY', 'SECONDARY') NOT NULL,
     `recommending_position_id` VARCHAR(191) NULL,
     `approving_position_id` VARCHAR(191) NOT NULL,

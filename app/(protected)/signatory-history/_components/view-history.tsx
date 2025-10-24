@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -29,64 +27,19 @@ import {
   Navigation,
   OctagonX,
   PhilippinePeso,
-  TriangleAlert,
 } from "lucide-react";
-import { toast } from "sonner";
-import { updateTravelRequestById } from "@/actions/travel-order";
-import { RemarksModal } from "./travel-request-remarks";
 
-interface ViewTravelRequestProps {
+interface ViewHistoryDialogProps {
   trigger: React.ReactNode;
-  onUpdate: () => void;
   travelDetails: any;
 }
 
-export function ViewTravelRequestDialog({
+export function ViewHistoryDialog({
   trigger,
-  onUpdate,
   travelDetails,
-}: ViewTravelRequestProps) {
-  const user = useCurrentUser();
+}: ViewHistoryDialogProps) {
 
   const [open, setOpen] = useState(false);
-
-  const isRecommending =
-    travelDetails.authority?.recommending_position_id ===
-    user?.user?.position_id;
-
-  const isApproving =
-    travelDetails.authority?.approving_position_id === user?.user?.position_id;
-
-  const updateRequest = async () => {
-    try {
-      const result = await updateTravelRequestById(
-        travelDetails.id,
-        user?.user?.id
-      );
-
-      if (result?.error) {
-        toast("Oops", {
-          description: result?.error || "An error occurred!",
-          duration: 5000,
-          icon: <TriangleAlert className="text-red-500" size={20} />,
-        });
-      } else {
-        toast("Success", {
-          description: result?.success || "Travel order approved!",
-          duration: 5000,
-          icon: <BadgeCheck className="text-green-500" size={20} />,
-        });
-        onUpdate();
-        setOpen(false);
-      }
-    } catch (error) {
-      toast("Oops!", {
-        description: "An unexpected error occurred. Please try again.",
-        duration: 5000,
-        icon: <TriangleAlert size={20} />,
-      });
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -149,7 +102,7 @@ export function ViewTravelRequestDialog({
                         Requester
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.requester_name}
+                        {travelDetails.travelOrder.requester_name}
                       </p>
                     </div>
                     <div>
@@ -158,7 +111,7 @@ export function ViewTravelRequestDialog({
                         Travel Period
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.travel_period}
+                        {travelDetails.travelOrder.travel_period}
                       </p>
                     </div>
                   </div>
@@ -171,7 +124,7 @@ export function ViewTravelRequestDialog({
                         Purpose
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.purpose}
+                        {travelDetails.travelOrder.purpose}
                       </p>
                     </div>
                     <div>
@@ -180,7 +133,7 @@ export function ViewTravelRequestDialog({
                         Destination
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.destination}
+                        {travelDetails.travelOrder.destination}
                       </p>
                     </div>
                   </div>
@@ -206,7 +159,7 @@ export function ViewTravelRequestDialog({
                     Host of Activity
                   </p>
                   <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.host}
+                    {travelDetails.travelOrder.host}
                   </p>
                 </div>
                 <div>
@@ -215,7 +168,7 @@ export function ViewTravelRequestDialog({
                     Fund Source
                   </p>
                   <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.fund_source}
+                    {travelDetails.travelOrder.fund_source}
                   </p>
                 </div>
               </CardContent>
@@ -236,7 +189,8 @@ export function ViewTravelRequestDialog({
               </div>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  {travelDetails.recommending_status === "Approved" ? (
+                  {travelDetails.travelOrder.recommending_status ===
+                  "Approved" ? (
                     <div className="p-2 rounded-full bg-emerald-100">
                       <BadgeCheck className="h-6 w-6 text-emerald-500" />
                     </div>
@@ -253,20 +207,23 @@ export function ViewTravelRequestDialog({
                   <div>
                     <p className="font-medium">Recommending Authority</p>
                     <p className="text-sm text-slate-500">
-                      {travelDetails.recommending_status === "Approved"
+                      {travelDetails.travelOrder.recommending_status ===
+                      "Approved"
                         ? "Approved"
-                        : travelDetails.recommending_status === "Disapproved"
+                        : travelDetails.travelOrder.recommending_status ===
+                          "Disapproved"
                         ? "Disapproved"
                         : "Pending"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {travelDetails.approving_status === "Approved" ? (
+                  {travelDetails.travelOrder.approving_status === "Approved" ? (
                     <div className="p-2 rounded-full bg-emerald-100">
                       <BadgeCheck className="h-6 w-6 text-emerald-500" />
                     </div>
-                  ) : travelDetails.approving_status === "Disapproved" ? (
+                  ) : travelDetails.travelOrder.approving_status ===
+                    "Disapproved" ? (
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
                     </div>
@@ -279,9 +236,10 @@ export function ViewTravelRequestDialog({
                   <div>
                     <p className="font-medium">Approving Authority</p>
                     <p className="text-sm text-slate-500">
-                      {travelDetails.approving_status === "Approved"
+                      {travelDetails.travelOrder.approving_status === "Approved"
                         ? "Approved"
-                        : travelDetails.approving_status === "Disapproved"
+                        : travelDetails.travelOrder.approving_status ===
+                          "Disapproved"
                         ? "Disapproved"
                         : "Pending"}
                     </p>
@@ -304,10 +262,10 @@ export function ViewTravelRequestDialog({
                 </h3>
               </div>
               <CardContent className="p-4 space-y-2">
-                {travelDetails.attached_file ? (
+                {travelDetails.travelOrder.attached_file ? (
                   <iframe
                     src={`https://drive.google.com/file/d/${
-                      travelDetails.attached_file
+                      travelDetails.travelOrder.attached_file
                         .split("/d/")[1]
                         .split("/view")[0]
                     }/preview`}
@@ -321,46 +279,6 @@ export function ViewTravelRequestDialog({
             </Card>
           </div>
         </div>
-
-        <DialogFooter className="bg-slate-50 p-6 rounded-b-lg border-t">
-          <RemarksModal
-            user={user}
-            travelDetails={travelDetails}
-            onUpdate={onUpdate}
-          />
-
-          {isRecommending && !isApproving ? (
-            <Button
-              className={cn(
-                "hover:bg-primary/90 text-white w-full uppercase",
-                description.className
-              )}
-              onClick={updateRequest}
-            >
-              Recommending Approval
-            </Button>
-          ) : isApproving && !isRecommending ? (
-            <Button
-              className={cn(
-                "hover:bg-primary/90 text-white w-full uppercase",
-                description.className
-              )}
-              onClick={updateRequest}
-            >
-              Approve
-            </Button>
-          ) : isRecommending && isApproving ? (
-            <Button
-              className={cn(
-                "hover:bg-primary/90 text-white w-full uppercase",
-                description.className
-              )}
-              onClick={updateRequest}
-            >
-              Approve
-            </Button>
-          ) : null}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

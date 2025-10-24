@@ -38,14 +38,14 @@ model User {
   email          String   @unique
   password       String
   role           UserRole @default(ACCOUNT_HOLDER)
-  designation_id String   
-  position_id    String?  
+  designation_id String
+  position_id    String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   designation Designation @relation(fields: [designation_id], references: [id], onDelete: Restrict)
   position    Position?   @relation(fields: [position_id], references: [id], onDelete: SetNull)
-  
+
   TravelOrders TravelOrder[]
   Actions      Actions[]
 
@@ -53,23 +53,25 @@ model User {
 }
 
 model TravelOrder {
-  id              String      @id @default(cuid())
-  code            String      @unique
-  request_type    RequestType
-  requester_id    String
-  requester_name  String
-  position        String
-  purpose         String
-  host            String
-  travel_period   String
-  destination     String
-  fund_source      String
-  attached_file    String
-  authority_id     String
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                  String      @id @default(cuid())
+  code                String      @unique
+  request_type        RequestType
+  requester_id        String
+  requester_name      String
+  position            String
+  purpose             String
+  host                String
+  travel_period       String
+  destination         String
+  fund_source         String
+  attached_file       String
+  authority_id        String
+  recommending_status String?
+  approving_status    String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  requester User     @relation(fields: [requester_id], references: [id])
+  requester User      @relation(fields: [requester_id], references: [id])
   authority Authority @relation(fields: [authority_id], references: [id])
   actions   Actions[]
 }
@@ -88,14 +90,14 @@ model Designation {
 }
 
 model Position {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   type      PositionType @unique
   title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-  users        User[]
-  
+  users User[]
+
   recommendingAuthorities Authority[] @relation("RecommendingAuthority")
   approvingAuthorities    Authority[] @relation("ApprovingAuthority")
 
@@ -104,31 +106,31 @@ model Position {
 
 model Authority {
   id                       String          @id @default(cuid())
-  request_type                     RequestType
+  request_type             RequestType
   designation_type         DesignationType
   recommending_position_id String?         @map("recommending_position_id")
   approving_position_id    String          @map("approving_position_id")
   createdAt                DateTime        @default(now())
   updatedAt                DateTime        @updatedAt
 
-  recommending_position Position? @relation("RecommendingAuthority", fields: [recommending_position_id], references: [id], onDelete: Restrict)
-  approving_position    Position  @relation("ApprovingAuthority", fields: [approving_position_id], references: [id], onDelete: Restrict)
-  travelOrder TravelOrder[]
+  recommending_position Position?     @relation("RecommendingAuthority", fields: [recommending_position_id], references: [id], onDelete: Restrict)
+  approving_position    Position      @relation("ApprovingAuthority", fields: [approving_position_id], references: [id], onDelete: Restrict)
+  travelOrder           TravelOrder[]
 
   @@map("authorities")
 }
 
 model Actions {
-  id String @id @default(cuid())
-  code String 
+  id              String      @id @default(cuid())
+  code            String
   travel_order_id String
-  user_id String
-  action String
-  remarks String?
-  createdAt DateTime @default(now())
+  user_id         String
+  action          String
+  remarks         String?
+  createdAt       DateTime    @default(now())
+  travelOrder     TravelOrder @relation(fields: [travel_order_id], references: [id])
 
   users User[]
-  travelOrders TravelOrder[]
 }
 
 //Notes:

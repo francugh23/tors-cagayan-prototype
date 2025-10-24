@@ -1,14 +1,20 @@
 "use server";
 
 import prisma from "@/lib/db";
+import { getCurrentUser } from "@/actions/server";
 
-export const fetchActionsHistory = async (userId: string) => {
+export async function fetchActionsHistory() {
+  const user = await getCurrentUser();
+  // add logic for checking if user is authenticated oke?
   try {
     await prisma.$connect();
 
-    const res = await prisma.actionsHistory.findMany({
+    const res = await prisma.actions.findMany({
       where: {
-        userId: userId,
+        user_id: user?.uid,
+      },
+      include: {
+        travelOrder: true,
       },
     });
 
@@ -18,4 +24,4 @@ export const fetchActionsHistory = async (userId: string) => {
   } finally {
     await prisma.$disconnect();
   }
-};
+}

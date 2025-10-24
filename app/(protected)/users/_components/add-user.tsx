@@ -4,10 +4,11 @@ import type React from "react";
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BadgeCheck,
+  ChevronsUpDown,
   Eye,
   EyeOff,
   TriangleAlert,
@@ -46,7 +47,7 @@ import {
 
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Office, UserRole } from "@prisma/client";
+import { PositionType, UserRole } from "@prisma/client";
 import { AddUserSchema } from "@/schemas";
 import { createUser } from "@/actions/create-user";
 import {
@@ -55,81 +56,72 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useEdgeStore } from "@/lib/edgestore";
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { fetchStations, fetchStationsByOffice } from "@/data/stations";
-import { FileState, MultiFileDropzone } from "@/components/multi-file-zropzone";
-import NonFormSelect from "@/components/custom/nonform-select";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
+import { fetchDesignations, fetchPositions } from "@/data/user";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandItem,
+  CommandEmpty,
+} from "@/components/ui/command";
 
 interface AddUserDialogProps {
   onUpdate: () => void;
 }
 
 export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
-  const user = useCurrentUser();
-  const { edgestore } = useEdgeStore();
-
   const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [url, setUrl] = useState<string>();
-
-  const [fileStates, setFileStates] = useState<FileState[]>([]);
-
-  const [station, setStation] = useState<any>([]);
-  const [office, setOffice] = useState<Office>("SDO" as Office);
-
-  // useEffect(() => {
-  //   async function fetchData() {
-  //     try {
-  //       const res = await fetchStations();
-  //       setStation(res);
-  //     } catch (e) {
-  //       return null;
-  //     }
-  //   }
-  //   fetchData();
-  // }, []);
+  const [designation, setDesignation] = useState<any>([]);
+  const [positions, setPositions] = useState<any[]>([]);
+  const disabledRoles: UserRole[] = [UserRole.ACCOUNT_HOLDER, UserRole.ADMIN];
 
   useEffect(() => {
-    async function fetchData() {
+    const loadLists = async () => {
       try {
-        const res = await fetchStationsByOffice(office);
-        setStation(res);
-      } catch (e) {
-        return null;
+        const [positions, designations] = await Promise.all([
+          fetchPositions(),
+          fetchDesignations(),
+        ]);
+        setPositions(positions);
+        setDesignation(designations);
+      } catch (error) {
+        console.error("Failed to load lists:", error);
       }
-    }
-    fetchData();
-  }, [office])
+    };
 
-  function updateFileProgress(key: string, progress: FileState["progress"]) {
-    setFileStates((fileStates) => {
-      const newFileStates = structuredClone(fileStates);
-      const fileState = newFileStates.find(
-        (fileState) => fileState.key === key
-      );
-      if (fileState) {
-        fileState.progress = progress;
-      }
-      return newFileStates;
-    });
-  }
+    loadLists();
+  }, []);
 
-  // Initialize the form
   const form = useForm<z.infer<typeof AddUserSchema>>({
     resolver: zodResolver(AddUserSchema),
     defaultValues: {
       name: "",
       email: "",
       password: "",
-      stationId: "",
-      role: UserRole.CLIENT,
-      signature: "",
-      positionDesignation: "",
+      role: UserRole.ACCOUNT_HOLDER,
+      designation_id: "",
+      position_id: "",
     },
   });
+
+  const role = useWatch({
+    control: form.control,
+    name: "role",
+  });
+
+  useEffect(() => {
+    if (disabledRoles.includes(role)) {
+      form.setValue("position_id", "");
+    }
+  }, [role, form, disabledRoles]);
 
   const onSubmit = async (data: z.infer<typeof AddUserSchema>) => {
     try {
@@ -147,9 +139,9 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
           duration: 5000,
           icon: <BadgeCheck className="text-green-500" size={20} />,
         });
+        onUpdate();
         setOpen(false);
         form.reset();
-        onUpdate();
       }
     } catch (error) {
       console.error("Error creating user:", error);
@@ -172,15 +164,24 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
       }}
     >
       <DialogTrigger asChild>
-        <Button className={cn("bg-primary hover:bg-primary/90 uppercase", title.className)}>
+        <Button
+          className={cn(
+            "bg-primary hover:bg-primary/90 uppercase",
+            title.className
+          )}
+        >
           <UserPlus2 className="mr-2 h-4 w-4" />
           Add User
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className={cn("text-2xl font-bold", title.className)}>Add New User</DialogTitle>
-          <DialogDescription className={cn("text-muted-foreground", description.className)}>
+          <DialogTitle className={cn("text-2xl font-bold", title.className)}>
+            Add New User
+          </DialogTitle>
+          <DialogDescription
+            className={cn("text-muted-foreground", description.className)}
+          >
             Fill in the details to create a new user account.
           </DialogDescription>
         </DialogHeader>
@@ -202,12 +203,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                         Name
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Juan Dela Cruz"
-                          className="h-10"
-                          {...field}
-                          autoComplete="off"
-                        />
+                        <Input className="h-10" {...field} autoComplete="off" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -225,7 +221,6 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="user@example.com"
                           className="h-10"
                           {...field}
                           autoComplete="off"
@@ -287,11 +282,17 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                           )}
                         </div>
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        Leave blank to keep the current password.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
 
+              {/* Right column */}
+              <div className="space-y-5">
                 <FormField
                   control={form.control}
                   name="role"
@@ -310,8 +311,8 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={UserRole.CLIENT}>
-                            Client
+                          <SelectItem value={UserRole.ACCOUNT_HOLDER}>
+                            Account Holder
                           </SelectItem>
                           <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
                           <SelectItem value={UserRole.SIGNATORY}>
@@ -323,164 +324,132 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                     </FormItem>
                   )}
                 />
-              </div>
 
-              {/* Right column */}
-              <div className="space-y-5">
                 <FormField
                   control={form.control}
-                  name="positionDesignation"
+                  name="position_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        Position/Designation
+                        Position
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Teacher I"
-                          className="h-10"
-                          {...field}
-                          autoComplete="off"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-2">
-                  <NonFormSelect
-                    placeholder=""
-                    label="Office"
-                    options={[
-                      { value: "SDO", label: "SDO" },
-                      { value: "School", label: "School" },
-                    ]}
-                    defaultValue="SDO"
-                    getValue={(value) => setOffice(value as Office)}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="stationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Permanent Station
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="Select a station" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {station.map((station: any) => (
-                            <SelectItem key={station.id} value={station.id}>
-                              {station.unit}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="signature"
-                  render={({ field: { value, onChange, ...fieldProps } }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Signature
-                      </FormLabel>
-                      <FormControl>
-                        <div className="flex flex-col items-center gap-2">
-                          <MultiFileDropzone
-                            value={fileStates}
-                            onChange={(files) => {
-                              setFileStates(files);
-                            }}
-                            dropzoneOptions={{
-                              maxSize: 5 * 1024 * 1024,
-                              maxFiles: 1,
-                            }}
-                            onFilesAdded={async (addedFiles) => {
-                              setFileStates([...fileStates, ...addedFiles]);
-                              await Promise.all(
-                                addedFiles.map(async (addedFileState) => {
-                                  try {
-                                    const res =
-                                      await edgestore.myPublicImages.upload({
-                                        file: addedFileState.file,
-                                        input: { type: user?.user?.role },
-                                        options: {
-                                          temporary: true,
-                                        },
-                                        onProgressChange: async (progress) => {
-                                          updateFileProgress(
-                                            addedFileState.key,
-                                            progress
-                                          );
-                                          if (progress === 100) {
-                                            await new Promise((resolve) =>
-                                              setTimeout(resolve, 1000)
-                                            );
-                                            updateFileProgress(
-                                              addedFileState.key,
-                                              "COMPLETE"
-                                            );
-                                          }
-                                        },
-                                      });
-                                    setUrl(res.url);
-                                    onChange(res.url);
-                                  } catch (err) {
-                                    updateFileProgress(
-                                      addedFileState.key,
-                                      "ERROR"
-                                    );
-                                  }
-                                })
+                        <Select
+                          value={field.value || ""}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                          }}
+                          disabled={disabledRoles.includes(role)}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-10 uppercase">
+                              <SelectValue placeholder="Select a position" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.values(PositionType).map((type) => {
+                              const pos = positions.find(
+                                (p) => p.type === type
                               );
-                            }}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            JPG or PNG, max 5MB
-                          </p>
-                        </div>
+                              if (!pos) return null;
+
+                              return (
+                                <SelectItem
+                                  key={pos.id}
+                                  value={pos.id}
+                                  className="uppercase"
+                                >
+                                  {type.replace(/_/g, " ")}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        This is not required for Account Holders.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="designation_id"
+                  render={({ field }) => {
+                    const [open, setOpen] = useState(false);
+
+                    // Find selected designation object
+                    const selected = designation.find(
+                      (d: any) => d.id === field.value
+                    );
+
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">
+                          Division/Section/Unit
+                        </FormLabel>
+
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between truncate font-normal"
+                            >
+                              <span className="truncate">
+                                {selected
+                                  ? selected.name
+                                  : "Select a designation"}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+
+                          <PopoverContent
+                            align="start"
+                            sideOffset={4}
+                            className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[300px] overflow-y-auto"
+                          >
+                            <Command>
+                              <CommandInput placeholder="Search designation..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  No designations found.
+                                </CommandEmpty>
+                                {designation.map((d: any) => (
+                                  <CommandItem
+                                    key={d.id}
+                                    onSelect={() => {
+                                      field.onChange(d.id);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    {d.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </div>
 
             <DialogFooter className="pt-4">
-              {!url ? (
-                <p className="w-full text-muted-background text-xs">
-                  Don't forget to upload you signature.
-                </p>
-              ) : (
-                <Button
-                  type="submit"
-                  className="bg-primary hover:bg-primary/90 w-full"
-                  disabled={!url}
-                  onClick={async () => {
-                    if (url) {
-                      await edgestore.myPublicImages.confirmUpload({ url });
-                    }
-                  }}
-                >
-                  Create
-                </Button>
-              )}
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/90 w-full"
+                onClick={() => setOpen(false)}
+              >
+                Create
+              </Button>
             </DialogFooter>
           </form>
         </Form>

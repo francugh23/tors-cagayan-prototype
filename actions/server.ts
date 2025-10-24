@@ -10,6 +10,8 @@ interface User {
   email: string | null;
   password: string | null;
   role: UserRole;
+  designation_id: string;
+  position_id: string | null;
 }
 
 interface UserResponse {

@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Label } from "@/components/ui/label";
-import { TravelHistory } from "../table/columns";
+import { TravelRequest } from "../table/columns";
 import { FaFilePdf, FaHotel, FaUsers } from "react-icons/fa";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { TravelOrderPDF } from "@/components/custom/pdf-file";
@@ -28,41 +28,74 @@ import {
   BadgeCheck,
   Briefcase,
   Calendar,
-  CircleEllipsis,
+  Loader,
   FileStack,
   Globe,
   Info,
   MapPin,
   OctagonX,
   PhilippinePeso,
+  Navigation,
+  TriangleAlert,
 } from "lucide-react";
-import { fetchParticipantByTravelUserId } from "@/actions/travel-order";
+import { toast } from "sonner";
 
 interface ViewTravelOrderDialogProps {
   trigger: React.ReactNode;
-  travelDetails: TravelHistory;
+  travelDetails: TravelRequest;
 }
 
 export function ViewTravelOrderDialog({
   trigger,
   travelDetails,
 }: ViewTravelOrderDialogProps) {
-  const user = useCurrentUser();
-
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState<any>();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetchParticipantByTravelUserId(travelDetails.userId);
-        setData(res);
-      } catch (e) {
-        return null;
+  const handleDownloadAuthorizedTravel = async () => {
+    try {
+      const requestData = {
+        requester_name: travelDetails.requester_name,
+        position: travelDetails.position,
+        travel_order_code: travelDetails.code,
+        updated_at: new Date().toISOString(),
+      };
+
+      const response = await fetch("/api/generate-travel-document", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate travel document");
       }
+
+      const result = await response.json();
+      const gdriveUrl = result.gdriveUrl || result.url || result.fileUrl;
+
+      if (!gdriveUrl) {
+        throw new Error("No document URL returned from system");
+      }
+
+      // Open the document in a new tab
+      window.open(gdriveUrl, "_blank");
+
+      toast("Success", {
+        description: "Travel document generated successfully!",
+        duration: 5000,
+        icon: <BadgeCheck className="text-green-500" size={20} />,
+      });
+    } catch (error) {
+      console.error("Error generating travel document:", error);
+      toast("Oops!", {
+        description: "Failed to generate travel document. Please try again.",
+        duration: 5000,
+        icon: <TriangleAlert size={20} />,
+      });
     }
-    fetchData();
-  }, [travelDetails?.userId]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -104,7 +137,7 @@ export function ViewTravelOrderDialog({
 
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Card className="border-0 shadow-md overflow-hidden">
+            <Card className="border-0 shadow-md overflow-hidden md:col-span-2">
               <div className="bg-slate-200 p-4 border-b">
                 <h3
                   className={cn(
@@ -112,54 +145,54 @@ export function ViewTravelOrderDialog({
                     title.className
                   )}
                 >
-                  <FaUsers className="h-4 w-4" /> Participants
-                </h3>
-              </div>
-              <CardContent className="p-4 overflow-y-auto">
-                <p className="text-slate-700 font-medium uppercase text-justify">
-                  {data?.name} {travelDetails.additionalParticipants}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-md overflow-hidden">
-              <div className="bg-slate-200 p-4 border-b">
-                <h3
-                  className={cn(
-                    "font-medium text-slate-700 flex items-center gap-2",
-                    title.className
-                  )}
-                >
-                  <Info className="h-4 w-4" /> Travel Details
+                  <Navigation className="h-4 w-4" /> Travel Details
                 </h3>
               </div>
               <CardContent className="p-4 space-y-3">
-                <div>
-                  <p className="text-sm text-slate-500  flex items-center gap-1">
-                    <Briefcase className="h-3.5 w-3.5 text-slate-400" />
-                    Purpose
-                  </p>
-                  <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.purpose}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500  flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                    Inclusive Dates
-                  </p>
-                  <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.inclusiveDates}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                    Destination
-                  </p>
-                  <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.destination}
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column */}
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500 flex items-center gap-1">
+                        <FaUsers className="h-3.5 w-3.5 text-slate-400" />
+                        Requester
+                      </p>
+                      <p className="text-slate-700 font-medium uppercase">
+                        {travelDetails.requester_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                        Travel Period
+                      </p>
+                      <p className="text-slate-700 font-medium uppercase">
+                        {travelDetails.travel_period}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-slate-500 flex items-center gap-1">
+                        <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+                        Purpose
+                      </p>
+                      <p className="text-slate-700 font-medium uppercase">
+                        {travelDetails.purpose}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                        Destination
+                      </p>
+                      <p className="text-slate-700 font-medium uppercase">
+                        {travelDetails.destination}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -191,7 +224,7 @@ export function ViewTravelOrderDialog({
                     Fund Source
                   </p>
                   <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.fundSource}
+                    {travelDetails.fund_source}
                   </p>
                 </div>
               </CardContent>
@@ -206,48 +239,60 @@ export function ViewTravelOrderDialog({
                     title.className
                   )}
                 >
-                  <CircleEllipsis className="h-4 w-4" />
+                  <Info className="h-4 w-4" />
                   Request Status
                 </h3>
               </div>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  {travelDetails.isRecommendingApprovalSigned ? (
+                  {travelDetails.recommending_status === "Approved" ? (
                     <div className="p-2 rounded-full bg-emerald-100">
                       <BadgeCheck className="h-6 w-6 text-emerald-500" />
                     </div>
-                  ) : (
+                  ) : travelDetails.recommending_status === "Disapproved" ? (
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-full bg-yellow-100">
+                      <Loader className="h-6 w-6 text-yellow-500" />
                     </div>
                   )}
 
                   <div>
-                    <p className="font-medium">Recommending Approval</p>
+                    <p className="font-medium">Recommending Authority</p>
                     <p className="text-sm text-slate-500">
-                      {travelDetails.isFinalApprovalSigned
-                        ? "Signed"
-                        : "Not Signed Yet"}
+                      {travelDetails.recommending_status === "Approved"
+                        ? "Approved"
+                        : travelDetails.recommending_status === "Disapproved"
+                        ? "Disapproved"
+                        : "Pending"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {travelDetails.isFinalApprovalSigned ? (
+                  {travelDetails.approving_status === "Approved" ? (
                     <div className="p-2 rounded-full bg-emerald-100">
                       <BadgeCheck className="h-6 w-6 text-emerald-500" />
                     </div>
-                  ) : (
+                  ) : travelDetails.approving_status === "Disapproved" ? (
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-full bg-yellow-100">
+                      <Loader className="h-6 w-6 text-yellow-500" />
                     </div>
                   )}
 
                   <div>
-                    <p className="font-medium">Final Approval</p>
+                    <p className="font-medium">Approving Authority</p>
                     <p className="text-sm text-slate-500">
-                      {travelDetails.isFinalApprovalSigned
-                        ? "Signed"
-                        : "Not Signed Yet"}
+                      {travelDetails.approving_status === "Approved"
+                        ? "Approved"
+                        : travelDetails.approving_status === "Disapproved"
+                        ? "Disapproved"
+                        : "Pending"}
                     </p>
                   </div>
                 </div>
@@ -268,19 +313,29 @@ export function ViewTravelOrderDialog({
                 </h3>
               </div>
               <CardContent className="p-4 space-y-2">
-                <object
-                  data={travelDetails.attachedFile as string}
-                  type="application/pdf"
-                  style={{ width: "100%", height: "500px" }}
-                />
+                {travelDetails.attached_file ? (
+                  <iframe
+                    src={`https://drive.google.com/file/d/${
+                      travelDetails.attached_file
+                        .split("/d/")[1]
+                        .split("/view")[0]
+                    }/preview`}
+                    style={{ width: "100%", height: "500px", border: "none" }}
+                    title="Attached File"
+                  />
+                ) : (
+                  <p className="text-muted-foreground">No file attached.</p>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
 
         <DialogFooter className="bg-slate-50 p-6 rounded-b-lg border-t">
-          {!travelDetails.isRecommendingApprovalSigned ||
-          !travelDetails.isFinalApprovalSigned ? (
+          {(!travelDetails.recommending_status &&
+            travelDetails.recommending_status !== "Approved") ||
+          (!travelDetails.approving_status &&
+            travelDetails.approving_status !== "Approved") ? (
             <Badge
               variant={"destructive"}
               className={cn(
@@ -291,21 +346,16 @@ export function ViewTravelOrderDialog({
               <div>Note: This travel order is not yet approved.</div>
             </Badge>
           ) : (
-            <PDFDownloadLink
-              document={<TravelOrderPDF user={user} details={travelDetails} />}
-              fileName={`${travelDetails.code}`}
-              className="w-full"
+            <Button
+              className={cn(
+                "hover:bg-primary/90 text-white w-full",
+                description.className
+              )}
+              onClick={handleDownloadAuthorizedTravel}
             >
-              <Button
-                className={cn(
-                  "hover:bg-primary/90 text-white w-full",
-                  description.className
-                )}
-              >
-                <FaFilePdf className="h-4 w-4" />
-                Download PDF
-              </Button>
-            </PDFDownloadLink>
+              <FaFilePdf className="h-4 w-4" />
+              Download Authorized Travel
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

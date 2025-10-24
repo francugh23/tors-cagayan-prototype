@@ -90,7 +90,7 @@ export function RemarksModal({
           )}
           type="button"
         >
-          Deny
+          Disapprove
         </Button>
       </DialogTrigger>
 
@@ -161,12 +161,25 @@ export function RemarksModal({
                 </Button>
 
                 {/* Confirm button */}
+                {/* please change this if you have time 
+                kasi may bug itong code ng button huhu */}
                 <Button
                   className={cn(
                     "hover:bg-primary/90 text-white w-full uppercase",
                     description.className
                   )}
-                  type="submit"
+                  type="button" 
+                  onClick={async () => {
+
+                    const isValid = await form.trigger();
+
+                    if (isValid) {
+                      const formData = form.getValues();
+                      onSubmit(formData); 
+                    } else {
+                      console.log("Form is not valid, cannot submit");
+                    }
+                  }}
                 >
                   Confirm
                 </Button>

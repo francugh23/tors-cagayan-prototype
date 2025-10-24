@@ -23,22 +23,18 @@ const UsersPage = () => {
   const [state, setState] = useState<"ready" | "loading" | "error">("loading");
 
   useEffect(() => {
-    async function fetchData() {
-      setState("loading");
-      try {
-        const res = await fetchUsers();
-        setData(res);
-        setState("ready");
-      } catch (e) {
-        setState("error");
-      }
-    }
-    fetchData();
+    refetchData();
   }, []);
 
   async function refetchData() {
-    const res = await fetchUsers();
-    setData(res);
+    setState("loading");
+    try {
+      const res = await fetchUsers();
+      setData(res);
+      setState("ready");
+    } catch {
+      setState("error");
+    }
   }
 
   return (
@@ -68,7 +64,7 @@ const UsersPage = () => {
         {state === "ready" && (
           <>
             <Separator />
-            <DataTable data={data} columns={columns} />
+            <DataTable data={data} columns={columns} onUpdate={refetchData} />
           </>
         )}
         {state === "error" && (

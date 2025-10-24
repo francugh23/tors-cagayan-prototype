@@ -19,8 +19,6 @@ export const authRoutes = [
 
 export const apiAuthPrefix = "/api/auth";
 
-export const apiAuthEdgeStore = "/api/edgestore"
-
 /**
  * The default redirect path after logging in
  * @param {string} role - The role of the user

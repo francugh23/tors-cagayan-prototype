@@ -11,11 +11,12 @@ import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { fetchTravelOrderRequestForASDS } from "@/actions/travel-order";
+import { fetchTravelOrdersForSignatory } from "@/actions/travel-order";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/app/(protected)/signatory/table/data-table";
 import { columns } from "@/app/(protected)/signatory/table/columns";
+import { RoleGate } from "@/components/auth/role-gate";
 
 const SignatoryPage = () => {
   const user = useCurrentUser();
@@ -26,7 +27,7 @@ const SignatoryPage = () => {
     async function fetchData() {
       setState("loading");
       try {
-        const res = await fetchTravelOrderRequestForASDS(user?.user?.id);
+        const res = await fetchTravelOrdersForSignatory();
         setData(res);
         setState("ready");
       } catch (e) {
@@ -35,10 +36,10 @@ const SignatoryPage = () => {
       }
     }
     fetchData();
-  }, [user?.user?.id]);
+  }, []);
 
   async function refetchData() {
-    const res = await fetchTravelOrderRequestForASDS(user?.user?.id);
+    const res = await fetchTravelOrdersForSignatory();
     setData(res);
   }
 

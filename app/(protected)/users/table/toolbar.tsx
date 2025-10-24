@@ -45,8 +45,8 @@ export function DataTableToolbar<TData>({
             column={table.getColumn("role")}
             title="Role"
             options={[
-              { label: "Admin", value: "ADMIN" },
-              { label: "Client", value: "CLIENT" },
+              { label: "Administrator", value: "ADMIN" },
+              { label: "Account Holder", value: "ACCOUNT_HOLDER" },
               { label: "Signatory", value: "SIGNATORY" },
             ]}
           />

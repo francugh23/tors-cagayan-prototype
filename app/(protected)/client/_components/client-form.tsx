@@ -23,7 +23,7 @@ import {
 import { useForm } from "react-hook-form";
 import NonFormInput from "../../../../components/custom/nonform-input";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { fetchDesignationById } from "@/data/stations";
 import { TravelFormSchema } from "@/schemas";
 import { z } from "zod";
@@ -37,6 +37,15 @@ import { createTravelOrder } from "@/actions/travel-order";
 import { toast } from "sonner";
 import { SingleFileUpload } from "./single-file-upload";
 import { DateRangePicker } from "./date-range-picker";
+import { RequestType } from "@prisma/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ClientFormProps {
   user?: any;
@@ -44,9 +53,8 @@ interface ClientFormProps {
 }
 
 export function ClientForm({ user, label }: ClientFormProps) {
+  const [isPending, startTransition] = useTransition();
   const [designation, setDesignation] = useState<any>(null);
-  //const [fileStates, setFileStates] = useState<FileState[]>([]);
-  //const [url, setUrl] = useState<string>();
 
   useEffect(() => {
     async function fetchData() {
@@ -63,6 +71,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
   const form = useForm<z.infer<typeof TravelFormSchema>>({
     resolver: zodResolver(TravelFormSchema),
     defaultValues: {
+      requester_type: RequestType.WITHIN_DIVISION,
       requester_name: "",
       position: "",
       purpose: "",
@@ -75,78 +84,83 @@ export function ClientForm({ user, label }: ClientFormProps) {
   });
 
   async function onSubmit(data: z.infer<typeof TravelFormSchema>) {
-    try {
-      let gdriveUrl: string;
+    startTransition(async () => {
+      try {
+        let gdriveUrl: string;
 
-      // Since attachedFile is required, it must be a File
-      if (data.attached_file instanceof File) {
-        console.log("File detected:", data.attached_file.name);
+        // Since attachedFile is required, it must be a File
+        if (data.attached_file instanceof File) {
+          // Upload file to GDrive via your API route
+          const formData = new FormData();
+          formData.append("file", data.attached_file);
 
-        // Upload file to GDrive via your API route
-        const formData = new FormData();
-        formData.append("file", data.attached_file);
+          const uploadResponse = await fetch("/api/test-n8n", {
+            method: "POST",
+            body: formData,
+          });
 
-        const uploadResponse = await fetch("/api/test-n8n", {
-          method: "POST",
-          body: formData,
-        });
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            toast("Oops", {
+              description: errorData?.error || "File upload failed!",
+              duration: 5000,
+              icon: <TriangleAlert className="text-red-500" size={20} />,
+            });
+            return; // Exit early if upload fails
+          }
 
-        if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.json();
-          throw new Error(errorData.error || "File upload failed");
+          const { n8nResponse } = await uploadResponse.json();
+
+          // Extract the GDrive URL from n8n response
+          gdriveUrl = n8nResponse.webViewLink;
+
+          if (!gdriveUrl) {
+            toast("Oops", {
+              description: "No URL returned from file upload!",
+              duration: 5000,
+              icon: <TriangleAlert className="text-red-500" size={20} />,
+            });
+            return; // Exit early if no URL
+          }
+        } else {
+          throw new Error("File is required");
         }
 
-        const { n8nResponse } = await uploadResponse.json();
+        // Prepare data with GDrive URL instead of File object
+        const submitData = {
+          ...data,
+          attached_file: gdriveUrl, // Replace File object with URL string
+        };
 
-        // Extract the GDrive URL from n8n response
-        gdriveUrl = n8nResponse.webViewLink;
+        // Call your existing action (it expects attached_file as string)
+        const result = await createTravelOrder(submitData);
 
-        if (!gdriveUrl) {
-          throw new Error("No URL returned from file upload");
+        if (result?.error) {
+          toast("Oops", {
+            description: result?.error || "An error occurred!",
+            duration: 5000,
+            icon: <TriangleAlert className="text-red-500" size={20} />,
+          });
+        } else if (result?.success) {
+          toast("Success", {
+            description: result?.success || "Travel order submitted!",
+            duration: 5000,
+            icon: <BadgeCheck className="text-green-500" size={20} />,
+          });
+          form.reset();
         }
-
-        console.log("✅ GDrive URL received:", gdriveUrl);
-      } else {
-        throw new Error("File is required");
-      }
-
-      // Prepare data with GDrive URL instead of File object
-      const submitData = {
-        ...data,
-        attached_file: gdriveUrl, // Replace File object with URL string
-      };
-
-      // Log the final data that will be sent to database
-      console.log("Final form data to be saved:", submitData);
-
-      // Call your existing action (it expects attached_file as string)
-      const result = await createTravelOrder(submitData);
-
-      if (result?.error) {
-        toast("Oops", {
-          description: result?.error || "An error occurred!",
+      } catch (error) {
+        console.error("Error submitting travel order:", error);
+        toast("Oops!", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred. Please try again.",
           duration: 5000,
-          icon: <TriangleAlert className="text-red-500" size={20} />,
+          icon: <TriangleAlert size={20} />,
         });
-      } else if (result?.success) {
-        toast("Success", {
-          description: result?.success || "Travel order submitted!",
-          duration: 5000,
-          icon: <BadgeCheck className="text-green-500" size={20} />,
-        });
-        form.reset();
       }
-    } catch (error) {
-      console.error("Error submitting travel order:", error);
-      toast("Oops!", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred. Please try again.",
-        duration: 5000,
-        icon: <TriangleAlert size={20} />,
-      });
-    }
+    });
   }
 
   return (
@@ -190,7 +204,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            className="h-10 text-right uppercase font-medium"
+                            className="h-10 uppercase font-medium"
                             {...field}
                             autoComplete="off"
                           />
@@ -202,18 +216,18 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 </div>
                 <div className="space-y-2">
                   <NonFormInput
-                    label="Office"
+                    label="Permanent Division/Section/Unit"
                     defaultValue={designation?.type || ""}
                     readOnly
-                    className="text-sm font-medium text-right"
+                    className="text-sm font-medium"
                   />
                 </div>
                 <div className="space-y-2">
                   <NonFormInput
-                    label="Permanent Station"
+                    label="Office"
                     defaultValue={designation?.code || ""}
                     readOnly
-                    className="text-sm font-medium text-right"
+                    className="text-sm font-medium"
                   />
                 </div>
 
@@ -336,26 +350,56 @@ export function ClientForm({ user, label }: ClientFormProps) {
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="fund_source"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Fund Source
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          className="h-10 uppercase font-medium"
-                          {...field}
-                          autoComplete="off"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <FormField
+                    control={form.control}
+                    name="requester_type"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Type of Request</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-10 uppercase font-medium">
+                                <SelectValue placeholder="Please select type." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value={RequestType.WITHIN_DIVISION}>
+                                WITHIN DIVISION
+                              </SelectItem>
+                              <SelectItem value={RequestType.OUTSIDE_DIVISION}>
+                                OUTSIDE DIVISION
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="fund_source"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel className="text-sm font-medium">
+                          Fund Source
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            className="h-10 uppercase font-medium"
+                            {...field}
+                            autoComplete="off"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
             <div className="space-x-2 flex justify-between">
@@ -376,8 +420,16 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 type="submit"
                 variant={"default"}
                 className={cn("hover:bg-primary/90 w-full", title.className)}
+                disabled={isPending}
               >
-                Submit
+                {isPending ? (
+                  <>
+                    <Spinner />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </Button>
             </div>
           </form>

@@ -47,7 +47,7 @@ export function AppSidebar() {
         <section className="w-full h-full flex gap-1 justify-center items-center">
           <span>
             <Image
-              src="/e-logo.svg"
+              src="/logo-cagayan.png"
               alt="App Logo"
               width={200}
               height={200}

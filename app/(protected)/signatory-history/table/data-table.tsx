@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { DataTableToolbar } from "@/app/(protected)/signatory-history/table/toolbar";
 import { DataTablePaginationNoCheckBox } from "@/components/data-table/pagination-no-checkbox";
+import { ViewHistoryDialog } from "../_components/view-history";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -94,12 +95,18 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                    <ViewHistoryDialog
+                      key={cell.id}
+                      trigger={
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      }
+                      travelDetails={row.original}
+                    />
                   ))}
                 </TableRow>
               ))

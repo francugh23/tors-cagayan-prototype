@@ -47,7 +47,7 @@ export const columns: ColumnDef<User>[] = [
       if (role === "ADMIN") {
         badgeStyles =
           "bg-red-100 text-red-800 hover:bg-red-100 border-red-200 border";
-      } else if (role === "CLIENT") {
+      } else if (role === "ACCOUNT_HOLDER") {
         badgeStyles =
           "bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border";
       } else if (role === "SIGNATORY") {

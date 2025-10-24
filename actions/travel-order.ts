@@ -2,10 +2,14 @@
 
 import * as z from "zod";
 import prisma from "@/lib/db";
-import { RemarksSchema, TravelFormSchema } from "@/schemas";
-import { getCurrentUser } from "./server";
+import { RemarksSchema, TravelFormSchemaSaveToDB } from "@/schemas";
+import { DesignationType } from "@prisma/client";
+import { formatTravelPeriod } from "@/actions/helper";
+import { getCurrentUser } from "@/actions/server";
 
-export const createTravelOrder = async (values: any) => {
+export const createTravelOrder = async (
+  values: z.infer<typeof TravelFormSchemaSaveToDB>
+) => {
   const generateCode = async () => {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, "0");
@@ -21,7 +25,7 @@ export const createTravelOrder = async (values: any) => {
       "0"
     );
 
-    const code = `TO-${day}${month}${year}-${randomLetters}${randomNumbers}`;
+    const code = `TO-${month}${day}${year}-${randomLetters}${randomNumbers}`;
 
     const existingTravelOrderCode = await prisma.travelOrder.findUnique({
       where: { code: code },
@@ -34,13 +38,14 @@ export const createTravelOrder = async (values: any) => {
     return code;
   };
 
-  const validatedFields = TravelFormSchema.safeParse(values);
+  const validatedFields = TravelFormSchemaSaveToDB.safeParse(values);
 
   if (!validatedFields.success) {
     return { error: "Invalid fields!" };
   }
 
   const {
+    requester_type,
     requester_name,
     position,
     purpose,
@@ -51,22 +56,59 @@ export const createTravelOrder = async (values: any) => {
     attached_file,
   } = validatedFields.data;
 
+  const formattedTravelPeriod = formatTravelPeriod(travel_period);
+
   const user = await getCurrentUser();
+
+  let authority;
+
+  const designation = await prisma.designation.findUnique({
+    where: { id: user?.user?.designation_id },
+    select: {
+      type: true,
+      code: true,
+    },
+  });
+
+  if (designation?.type === DesignationType.SDO) {
+    const ASDS_ELEM_OFFICES = ["OSDS"];
+
+    if (ASDS_ELEM_OFFICES.includes(designation.code)) {
+      authority = await prisma.authority.findFirst({
+        where: {
+          request_type: requester_type,
+          designation_type: designation.type,
+        },
+        select: {
+          id: true,
+        },
+      });
+    }
+  }
+
+  if (!authority) {
+    return {
+      error: "Authority not found.",
+    };
+  }
 
   try {
     const travel_order = await prisma.travelOrder.create({
       data: {
         code: await generateCode(),
-        request_type: "WITHIN_DIVISION",
+        request_type: requester_type,
         requester_id: user?.user?.id as string,
         requester_name: requester_name,
         position: position,
         purpose: purpose,
         host: host,
-        travel_period: travel_period,
+        travel_period: formattedTravelPeriod,
         destination: destination,
         fund_source: fund_source,
         attached_file: attached_file,
+        authority_id: authority.id,
+        recommending_status: "Pending",
+        approving_status: "Pending",
       },
     });
 
@@ -86,13 +128,18 @@ export const createTravelOrder = async (values: any) => {
   }
 };
 
-export const fetchTravelOrdersById = async (userId: string) => {
+export async function fetchTravelOrdersById() {
+  const user = await getCurrentUser();
+
   try {
     await prisma.$connect;
 
     const res = await prisma.travelOrder.findMany({
       where: {
-        userId: userId,
+        requester_id: user?.uid,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
@@ -102,9 +149,76 @@ export const fetchTravelOrdersById = async (userId: string) => {
   } finally {
     await prisma.$disconnect;
   }
-};
+}
 
-export const fetchTravelOrderRequestForASDS = async (userId: string) => {
+export async function fetchTravelOrdersForSignatory() {
+  const user = await getCurrentUser();
+  try {
+    await prisma.$connect;
+
+    // Check if this position is for recommending
+    const isRecommending = await prisma.authority.count({
+      where: { recommending_position_id: user?.user?.position_id },
+    });
+
+    if (isRecommending > 0) {
+      // CASE 1: Recommending signatory - show pending recommendations
+      const res = await prisma.travelOrder.findMany({
+        where: {
+          authority: { recommending_position_id: user?.user?.position_id },
+          recommending_status: "Pending",
+        },
+        include: {
+          requester: true,
+          authority: {
+            include: {
+              recommending_position: true,
+              approving_position: true,
+            },
+          },
+          actions: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      return res;
+    }
+
+    // CASE 2: Approving signatory - show pending approvals (after recommendation approved)
+    const res = await prisma.travelOrder.findMany({
+      where: {
+        authority: {
+          approving_position_id: user?.user?.position_id as string,
+        },
+        recommending_status: "Approved",
+        approving_status: "Pending",
+      },
+      include: {
+        requester: true,
+        authority: {
+          include: {
+            recommending_position: true,
+            approving_position: true,
+          },
+        },
+        actions: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching travel orders for signatory:", error);
+    return [];
+  } finally {
+    await prisma.$disconnect;
+  }
+}
+
+export const updateTravelRequestById = async (id: string, userId: string) => {
   try {
     await prisma.$connect();
 
@@ -113,109 +227,97 @@ export const fetchTravelOrderRequestForASDS = async (userId: string) => {
         id: userId,
       },
       select: {
-        positionDesignation: true,
+        position_id: true,
       },
     });
 
-    if (user?.positionDesignation === "ASDS") {
-      const data = await prisma.travelOrder.findMany({
-        where: {
-          isRecommendingApprovalSigned: false,
-          status: "Pending",
-        },
-      });
-
-      return data;
-    } else if (user?.positionDesignation === "SDS") {
-      const data = await prisma.travelOrder.findMany({
-        where: {
-          isRecommendingApprovalSigned: true,
-          isFinalApprovalSigned: false,
-          status: "ASDS Approved",
-        },
-      });
-
-      return data;
-    } else {
-      return [];
+    if (!user?.position_id) {
+      return { error: "User position not found!" };
     }
-  } catch {
-    return [];
-  } finally {
-    await prisma.$disconnect();
-  }
-};
-
-export const updateTravelRequestOrderById = async (
-  id: string,
-  userId: string
-) => {
-  try {
-    await prisma.$connect();
-
-    const designation = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        id: true,
-        positionDesignation: true,
-        signature: true,
-      },
-    });
 
     const travelOrder = await prisma.travelOrder.findUnique({
       where: { id: id },
-      select: {
-        id: true,
-        code: true,
-        status: true,
+      include: {
+        authority: {
+          include: {
+            recommending_position: true,
+            approving_position: true,
+          },
+        },
       },
     });
 
-    if (designation?.positionDesignation === "ASDS") {
-      await prisma.travelOrder.update({
-        where: { id: travelOrder?.id },
-        data: {
-          isRecommendingApprovalSigned: true,
-          recommendingSignature: designation?.signature as string,
-          recommendingApprovalAt: new Date(),
-          status: "ASDS Approved",
-        },
-      });
+    if (!travelOrder) {
+      return { error: "Travel request not found!" };
+    }
 
-      await prisma.actionsHistory.create({
+    let isRecommending = false;
+    let isApproving = false;
+
+    if (travelOrder.authority?.recommending_position_id === user.position_id) {
+      isRecommending = true;
+    }
+
+    if (travelOrder.authority?.approving_position_id === user.position_id) {
+      isApproving = true;
+    }
+
+    if (!isRecommending && !isApproving) {
+      return {
+        error: "You don't have permission to approve this travel order!",
+      };
+    }
+
+    if (isApproving && travelOrder.recommending_status !== "Approved") {
+      return {
+        error: "Travel order must be recommended before final approval!",
+      };
+    }
+
+    if (isRecommending) {
+      if (travelOrder.recommending_status !== "Pending") {
+        return { error: "Recommendation already processed!" };
+      }
+
+      await prisma.travelOrder.update({
+        where: { id: id },
         data: {
-          code: `APPROVED-${travelOrder?.code}`,
-          travelOrderId: id,
-          action: "Approved a travel order request.",
-          userId: designation?.id as string,
-          createdAt: new Date(),
+          recommending_status: "Approved",
+          updatedAt: new Date(),
         },
       });
     }
 
-    if (designation?.positionDesignation === "SDS") {
-      await prisma.travelOrder.update({
-        where: { id: travelOrder?.id },
-        data: {
-          isFinalApprovalSigned: true,
-          finalSignature: designation?.signature as string,
-          finalApprovalAt: new Date(),
-          status: "SDS Approved",
-        },
-      });
+    if (isApproving) {
+      if (
+        travelOrder.approving_status !== "Pending" &&
+        travelOrder.approving_status !== null
+      ) {
+        return { error: "Approval already processed!" };
+      }
 
-      await prisma.actionsHistory.create({
+      await prisma.travelOrder.update({
+        where: { id: id },
         data: {
-          code: `APPROVED-${travelOrder?.code}`,
-          travelOrderId: id,
-          action: "Approved a travel order request.",
-          userId: designation?.id as string,
-          createdAt: new Date(),
+          approving_status: "Approved",
+          updatedAt: new Date(),
         },
       });
     }
+
+    await prisma.actions.create({
+      data: {
+        code: `${isRecommending ? "RECOMMENDED" : "APPROVED"}-${
+          travelOrder.code
+        }`,
+        travel_order_id: id,
+        action: `${
+          isRecommending ? "Recommended" : "Approved"
+        } a travel order request.`,
+        user_id: userId,
+        createdAt: new Date(),
+      },
+    });
 
     return { success: "Travel order request approved!" };
   } catch (error) {
@@ -240,70 +342,99 @@ export const denyTravelRequestOrderById = async (
 
     const { travelOrderId: id, userId, remarks } = validatedFields.data;
 
-    const designation = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        id: true,
-        positionDesignation: true,
-        signature: true,
-      },
+    // Get user's position
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { position_id: true },
     });
 
+    if (!user?.position_id) {
+      return { error: "User position not found!" };
+    }
+
+    // Get travel order and its authority
     const travelOrder = await prisma.travelOrder.findUnique({
       where: { id: id },
-      select: {
-        code: true,
-      },
+      include: { authority: true },
     });
 
-    if (designation?.positionDesignation === "ASDS") {
+    if (!travelOrder) {
+      return { error: "Travel request not found!" };
+    }
+
+    // Determine if user is recommending or approving
+    const isRecommending =
+      travelOrder.authority?.recommending_position_id === user.position_id;
+    const isApproving =
+      travelOrder.authority?.approving_position_id === user.position_id;
+
+    if (!isRecommending && !isApproving) {
+      return { error: "You don't have permission to deny this travel order!" };
+    }
+
+    // Validate denial flow (approving authority cannot deny before recommendation is made)
+    if (isApproving && !travelOrder.recommending_status) {
+      return {
+        error: "Cannot deny approval before recommendation is processed!",
+      };
+    }
+
+    if (isRecommending) {
+      // Check if recommending status is already processed
+      if (
+        travelOrder.recommending_status &&
+        travelOrder.recommending_status !== "Pending"
+      ) {
+        return { error: "Recommendation already processed!" };
+      }
+
       await prisma.travelOrder.update({
         where: { id: id },
         data: {
-          isRecommendingApprovalSigned: false,
-          recommendingApprovalAt: new Date(),
-          status: "Denied",
-        },
-      });
-
-      await prisma.actionsHistory.create({
-        data: {
-          code: `DENIED-${travelOrder?.code}`,
-          travelOrderId: id,
-          action: "Denied a travel order request.",
-          remarks: remarks,
-          userId: designation?.id as string,
-          createdAt: new Date(),
+          recommending_status: "Disapproved",
+          updatedAt: new Date(),
         },
       });
     }
 
-    if (designation?.positionDesignation === "SDS") {
+    if (isApproving) {
+      // Check if approving status is already processed
+      if (
+        travelOrder.approving_status &&
+        travelOrder.approving_status !== "Pending"
+      ) {
+        return { error: "Approval already processed!" };
+      }
+
       await prisma.travelOrder.update({
         where: { id: id },
         data: {
-          isFinalApprovalSigned: false,
-          finalApprovalAt: new Date(),
-          status: "Denied",
-        },
-      });
-
-      await prisma.actionsHistory.create({
-        data: {
-          code: `DENIED-${travelOrder?.code}`,
-          travelOrderId: id,
-          action: "Denied a travel order request.",
-          userId: designation?.id as string,
-          createdAt: new Date(),
+          approving_status: "Disapproved",
+          updatedAt: new Date(),
         },
       });
     }
+
+    // Create action record
+    await prisma.actions.create({
+      data: {
+        code: `DENIED-${travelOrder.code}`,
+        travel_order_id: id,
+        action: `${
+          isRecommending
+            ? "Recommending Authority disapproved"
+            : "Approving Authority disapproved"
+        } a travel order request.`,
+        remarks: remarks,
+        user_id: userId,
+        createdAt: new Date(),
+      },
+    });
 
     return { success: "Travel order request denied!" };
   } catch (error) {
-    return { error: "Failed to deny travel order request!" };
+    console.error("Denial error:", error);
+    return { error: "Failed to deny travel order request!", details: error };
   } finally {
     await prisma.$disconnect();
   }

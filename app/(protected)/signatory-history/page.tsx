@@ -26,7 +26,7 @@ const SignatoryHistoryPage = () => {
     async function fetchData() {
       setState("loading");
       try {
-        const res = await fetchActionsHistory(user?.user?.id);
+        const res = await fetchActionsHistory();
         setData(res);
         setState("ready");
       } catch (e) {
@@ -35,10 +35,10 @@ const SignatoryHistoryPage = () => {
       }
     }
     fetchData();
-  }, [user?.user?.id]);
+  }, []);
 
   async function refetchData() {
-    const res = await fetchActionsHistory(user?.user?.id);
+    const res = await fetchActionsHistory();
     setData(res);
   }
 

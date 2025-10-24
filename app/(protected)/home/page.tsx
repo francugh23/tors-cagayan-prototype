@@ -13,21 +13,18 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/app/(protected)/home/table/data-table";
-import { columns } from "@/app/(protected)/home/table/columns";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { columns, TravelRequest } from "@/app/(protected)/home/table/columns";
 import { fetchTravelOrdersById } from "@/actions/travel-order";
-import { useSession } from "next-auth/react";
 
 const HomePage = () => {
-  const user = useCurrentUser();
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<TravelRequest[]>([]);
   const [state, setState] = useState<"ready" | "loading" | "error">("loading");
 
   useEffect(() => {
     async function fetchData() {
       setState("loading");
       try {
-        const res = await fetchTravelOrdersById(user?.uid);
+        const res = await fetchTravelOrdersById();
         setData(res);
         setState("ready");
       } catch (e) {
@@ -36,7 +33,7 @@ const HomePage = () => {
       }
     }
     fetchData();
-  }, [user?.uid]);
+  }, []);
 
   return (
     <Card>

@@ -24,15 +24,18 @@ import {
 import { DataTableToolbar } from "@/app/(protected)/users/table/toolbar";
 import { DataTablePaginationNoCheckBox } from "@/components/data-table/pagination-no-checkbox";
 import { DeleteUserModal } from "../_components/delete-modal";
+import { EditUserDialog } from "../_components/edit-user";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onUpdate: () => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onUpdate,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -93,10 +96,8 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <DeleteUserModal
+                    <EditUserDialog
                       key={cell.id}
-                      // @ts-ignore
-                      row={row.original.id}
                       trigger={
                         <TableCell key={cell.id}>
                           {flexRender(
@@ -105,6 +106,9 @@ export function DataTable<TData, TValue>({
                           )}
                         </TableCell>
                       }
+                      onUpdate={onUpdate}
+                      // @ts-ignore
+                      user_details={row.original}
                     />
                   ))}
                 </TableRow>

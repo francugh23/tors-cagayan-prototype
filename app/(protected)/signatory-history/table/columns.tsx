@@ -10,6 +10,11 @@ export type ActionsHistory = {
   action: string;
   remarks: string;
   createdAt: Date;
+  travelOrder: {
+    requester_name: string;
+    travel_period: string;
+    purpose: string;
+  }
 };
 
 export const columns: ColumnDef<ActionsHistory>[] = [
@@ -21,6 +26,30 @@ export const columns: ColumnDef<ActionsHistory>[] = [
     cell: ({ row }) => {
       return <div className="font-medium">{row.getValue("code")}</div>;
     },
+  },
+  {
+    id: "requester_name",
+    accessorFn: (row) => row.travelOrder.requester_name,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Requester Name" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-medium uppercase">
+        {row.original.travelOrder.requester_name}
+      </div>
+    ),
+  },
+  {
+    id: "purpose",
+    accessorFn: (row) => row.travelOrder.purpose,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Purpose" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-medium uppercase">
+        {row.original.travelOrder.purpose}
+      </div>
+    ),
   },
   {
     accessorKey: "action",

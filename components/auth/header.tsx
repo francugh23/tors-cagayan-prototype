@@ -1,7 +1,7 @@
 // import { Poppins } from "next/font/google";
 // import { cn } from "@/lib/utils";
 import Image from "next/image";
-import logo from "@/public/e-logo.svg"
+import logo from "@/public/logo-cagayan.jpg"
 
 // const font = Poppins({
 //   subsets: ['latin'],
@@ -22,7 +22,7 @@ export const Header = ({
       </h1> */}
       <Image
         src={logo}
-        alt="E-TRAVEL Logo"
+        alt="TORS"
         width={150}
         height={150}
         loading="lazy"
