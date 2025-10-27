@@ -21,9 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DataTableToolbar } from "@/app/(protected)/users/table/toolbar";
 import { DataTablePaginationNoCheckBox } from "@/components/data-table/pagination-no-checkbox";
-import { EditUserDialog } from "../_components/edit-user";
+import { DataTableToolbar } from "./toolbar";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -95,20 +94,12 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <EditUserDialog
-                      key={cell.id}
-                      trigger={
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      }
-                      onUpdate={onUpdate}
-                      // @ts-ignore
-                      user_details={row.original}
-                    />
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))

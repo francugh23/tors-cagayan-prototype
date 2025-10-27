@@ -7,11 +7,7 @@ import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  BadgeCheck,
   ChevronsUpDown,
-  Eye,
-  EyeOff,
-  TriangleAlert,
   UserPlus2,
 } from "lucide-react";
 
@@ -46,19 +42,10 @@ import {
 } from "@/components/ui/select";
 
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
 import { PositionType, UserRole } from "@prisma/client";
 import { AddUserSchema } from "@/schemas";
-import { createUser } from "@/actions/create-user";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
-import { fetchDesignations, fetchPositions } from "@/data/user";
 import {
   Popover,
   PopoverContent,
@@ -71,6 +58,9 @@ import {
   CommandItem,
   CommandEmpty,
 } from "@/components/ui/command";
+import { useCreateUser } from "@/hooks/use-functions-user";
+import { useDesignations } from "@/hooks/use-designations";
+import { usePositions } from "@/hooks/use-positions";
 
 interface AddUserDialogProps {
   onUpdate: () => void;
@@ -78,34 +68,21 @@ interface AddUserDialogProps {
 
 export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
   const [open, setOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [designation, setDesignation] = useState<any>([]);
-  const [positions, setPositions] = useState<any[]>([]);
   const disabledRoles: UserRole[] = [UserRole.ACCOUNT_HOLDER, UserRole.ADMIN];
+  const { data: positions = [] } = usePositions();
+  const { data: designations = [] } = useDesignations();
 
-  useEffect(() => {
-    const loadLists = async () => {
-      try {
-        const [positions, designations] = await Promise.all([
-          fetchPositions(),
-          fetchDesignations(),
-        ]);
-        setPositions(positions);
-        setDesignation(designations);
-      } catch (error) {
-        console.error("Failed to load lists:", error);
-      }
-    };
-
-    loadLists();
-  }, []);
+  const createUserMutation = useCreateUser(() => {
+    setOpen(false);
+    form.reset();
+    onUpdate();
+  });
 
   const form = useForm<z.infer<typeof AddUserSchema>>({
     resolver: zodResolver(AddUserSchema),
     defaultValues: {
       name: "",
       email: "",
-      password: "",
       role: UserRole.ACCOUNT_HOLDER,
       designation_id: "",
       position_id: "",
@@ -123,34 +100,8 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
     }
   }, [role, form, disabledRoles]);
 
-  const onSubmit = async (data: z.infer<typeof AddUserSchema>) => {
-    try {
-      const result = await createUser(data);
-
-      if (result?.error) {
-        toast("Oops", {
-          description: result?.error || "An error occurred!",
-          duration: 5000,
-          icon: <TriangleAlert className="text-red-500" size={20} />,
-        });
-      } else {
-        toast("Success", {
-          description: result?.success || "User created successfully!",
-          duration: 5000,
-          icon: <BadgeCheck className="text-green-500" size={20} />,
-        });
-        onUpdate();
-        setOpen(false);
-        form.reset();
-      }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      toast("Oops!", {
-        description: "An unexpected error occurred. Please try again.",
-        duration: 5000,
-        icon: <TriangleAlert size={20} />,
-      });
-    }
+  const onSubmit = (data: z.infer<typeof AddUserSchema>) => {
+    createUserMutation.mutate(data);
   };
 
   return (
@@ -233,62 +184,6 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            className="h-10 pr-10"
-                            {...field}
-                          />
-                          {showPassword ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  type="button"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  <EyeOff className="h-4 w-4" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Hide Password</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  type="button"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Show Password</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Leave blank to keep the current password.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Right column */}
@@ -311,10 +206,17 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          {/* {Object.values(UserRole).map((role) => (
+                            <SelectItem key={role} value={role}>
+                              {role.replace(/_/g, " ")}
+                            </SelectItem>
+                          ))} */}
                           <SelectItem value={UserRole.ACCOUNT_HOLDER}>
                             Account Holder
                           </SelectItem>
-                          <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
+                          <SelectItem value={UserRole.ADMIN}>
+                            Administrator
+                          </SelectItem>
                           <SelectItem value={UserRole.SIGNATORY}>
                             Signatory
                           </SelectItem>
@@ -349,7 +251,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                           <SelectContent>
                             {Object.values(PositionType).map((type) => {
                               const pos = positions.find(
-                                (p) => p.type === type
+                                (p: any) => p.type === type
                               );
                               if (!pos) return null;
 
@@ -373,15 +275,14 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                     </FormItem>
                   )}
                 />
-
+              </div>
+              <div className="md:col-span-2">
                 <FormField
                   control={form.control}
                   name="designation_id"
                   render={({ field }) => {
                     const [open, setOpen] = useState(false);
-
-                    // Find selected designation object
-                    const selected = designation.find(
+                    const selected = designations.find(
                       (d: any) => d.id === field.value
                     );
 
@@ -418,7 +319,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                                 <CommandEmpty>
                                   No designations found.
                                 </CommandEmpty>
-                                {designation.map((d: any) => (
+                                {designations.map((d: any) => (
                                   <CommandItem
                                     key={d.id}
                                     onSelect={() => {
@@ -446,7 +347,6 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
               <Button
                 type="submit"
                 className="bg-primary hover:bg-primary/90 w-full"
-                onClick={() => setOpen(false)}
               >
                 Create
               </Button>

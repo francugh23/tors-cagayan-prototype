@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BadgeCheck, Eye, EyeOff, Trash, TriangleAlert } from "lucide-react";
+import { BadgeCheck, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,12 +41,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { PositionType, UserRole } from "@prisma/client";
 import { EditUserSchema } from "@/schemas";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
 import { fetchPositions, fetchDesignations } from "@/data/user";
@@ -64,8 +58,11 @@ import {
 } from "@/components/ui/popover";
 import { ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
-import { updateUser } from "@/actions/create-user";
+import { resetUserPassword, updateUser } from "@/actions/user-actions";
 import { DeleteUserPopover } from "./delete-user";
+import { usePositions } from "@/hooks/use-positions";
+import { useDesignations } from "@/hooks/use-designations";
+import { useUpdateUser } from "@/hooks/use-functions-user";
 
 interface EditUserDialogProps {
   onUpdate: () => void;
@@ -79,26 +76,14 @@ export function EditUserDialog({
   user_details,
 }: EditUserDialogProps) {
   const [open, setOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [designation, setDesignation] = useState<any>([]);
-  const [positions, setPositions] = useState<any[]>([]);
+  const { data: positions = [] } = usePositions();
+  const { data: designations = [] } = useDesignations();
 
-  useEffect(() => {
-    const loadLists = async () => {
-      try {
-        const [positions, designations] = await Promise.all([
-          fetchPositions(),
-          fetchDesignations(),
-        ]);
-        setPositions(positions);
-        setDesignation(designations);
-      } catch (error) {
-        console.error("Failed to load lists:", error);
-      }
-    };
-
-    loadLists();
-  }, []);
+  const updateUserMutation = useUpdateUser(() => {
+    setOpen(false);
+    form.reset();
+    onUpdate();
+  });
 
   // Initialize the form
   const form = useForm<z.infer<typeof EditUserSchema>>({
@@ -107,40 +92,14 @@ export function EditUserDialog({
       id: user_details.id,
       name: user_details.name,
       email: user_details.email,
-      password: "",
       role: user_details.role,
       designation_id: user_details.designation_id,
       position_id: user_details.position_id || "",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof EditUserSchema>) => {
-    try {
-      const result = await updateUser(data);
-      if (result?.error) {
-        toast("Oops", {
-          description: result?.error || "An error occurred!",
-          duration: 5000,
-          icon: <TriangleAlert className="text-red-500" size={20} />,
-        });
-      } else {
-        toast("Success", {
-          description: result?.success || "User created successfully!",
-          duration: 5000,
-          icon: <BadgeCheck className="text-green-500" size={20} />,
-        });
-        onUpdate();
-        setOpen(false);
-        form.reset();
-      }
-    } catch (error) {
-      console.error("Error creating user:", error);
-      toast("Oops!", {
-        description: "An unexpected error occurred. Please try again.",
-        duration: 5000,
-        icon: <TriangleAlert size={20} />,
-      });
-    }
+  const onSubmit = (data: z.infer<typeof EditUserSchema>) => {
+    updateUserMutation.mutate(data);
   };
 
   return (
@@ -213,62 +172,6 @@ export function EditUserDialog({
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            className="h-10 pr-10"
-                            {...field}
-                          />
-                          {showPassword ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  type="button"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  <EyeOff className="h-4 w-4" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Hide Password</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  type="button"
-                                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Show Password</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Leave blank to keep the current password.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Right column */}
@@ -332,7 +235,7 @@ export function EditUserDialog({
                           <SelectContent>
                             {Object.values(PositionType).map((type) => {
                               const pos = positions.find(
-                                (p) => p.type === type
+                                (p: any) => p.type === type
                               );
                               if (!pos) return null;
 
@@ -356,7 +259,8 @@ export function EditUserDialog({
                     </FormItem>
                   )}
                 />
-
+              </div>
+              <div className="md:col-span-2">
                 <FormField
                   control={form.control}
                   name="designation_id"
@@ -364,7 +268,7 @@ export function EditUserDialog({
                     const [open, setOpen] = useState(false);
 
                     // Find selected designation object
-                    const selected = designation.find(
+                    const selected = designations.find(
                       (d: any) => d.id === field.value
                     );
 
@@ -401,7 +305,7 @@ export function EditUserDialog({
                                 <CommandEmpty>
                                   No designations found.
                                 </CommandEmpty>
-                                {designation.map((d: any) => (
+                                {designations.map((d: any) => (
                                   <CommandItem
                                     key={d.id}
                                     onSelect={() => {
@@ -433,10 +337,30 @@ export function EditUserDialog({
                     className="hover:bg-secondary/90 text-black font-normal"
                     variant={"link"}
                     size={"sm"}
+                    onClick={async () => {
+                      const res = await resetUserPassword(user_details.id);
+                      if (res?.success) {
+                        toast("Success", {
+                          description:
+                            res?.success || "User created successfully!",
+                          duration: 5000,
+                          icon: (
+                            <BadgeCheck className="text-green-500" size={20} />
+                          ),
+                        });
+                        onUpdate();
+                        setOpen(false);
+                        form.reset();
+                      }
+                    }}
                   >
                     Reset Password
                   </Button>
-                  <DeleteUserPopover user={user_details}/>
+                  <DeleteUserPopover
+                    user={user_details}
+                    dialogOpen={setOpen}
+                    onUpdate={onUpdate}
+                  />
                 </div>
                 <Button
                   type="submit"

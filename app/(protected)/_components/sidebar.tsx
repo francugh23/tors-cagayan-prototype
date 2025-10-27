@@ -73,7 +73,7 @@ export function AppSidebar() {
                 menuItems={[
                   {
                     menuTitle: "Logs",
-                    url: "/server",
+                    url: "/logs",
                     menuIcon: Layers,
                   },
                 ]}

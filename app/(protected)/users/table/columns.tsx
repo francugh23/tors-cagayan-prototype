@@ -1,9 +1,7 @@
 "use client";
 
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
-import { DataTableRowActions } from "@/components/data-table/row-actions";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { UserRole } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";

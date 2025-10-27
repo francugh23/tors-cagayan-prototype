@@ -120,7 +120,6 @@ export const RemarksSchema = z.object({
 export const AddUserSchema = z.object({
   name: z.string().min(5, "Name must be at least 5 characters"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.nativeEnum(UserRole),
   designation_id: z.string().min(1, "Designation is required."),
   position_id: z.string().optional(),
@@ -130,7 +129,6 @@ export const EditUserSchema = z.object({
   id: z.string().min(1, "User ID is required"),
   name: z.string().min(5, "Name must be at least 5 characters"),
   email: z.string().email("Invalid email address"),
-  password: z.string().optional(),
   role: z.nativeEnum(UserRole),
   designation_id: z.string().min(1, "Designation is required."),
   position_id: z.string().optional(),

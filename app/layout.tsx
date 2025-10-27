@@ -34,8 +34,8 @@ export default async function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           suppressHydrationWarning={true}
         >
-          <Toaster />
           {children}
+          <Toaster />
         </body>
       </html>
     </SessionProvider>

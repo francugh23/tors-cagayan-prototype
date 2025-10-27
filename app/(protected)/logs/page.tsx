@@ -11,14 +11,13 @@ import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { DataTable } from "@/app/(protected)/users/table/data-table";
-import { columns } from "@/app/(protected)/users/table/columns";
+import { useAdminActions } from "@/hooks/use-admin-actions";
 import { CircleAlert } from "lucide-react";
-import { AddUserDialog } from "./_components/add-user";
-import { useUsers } from "@/hooks/use-users";
+import { columns } from "./table/columns";
+import { DataTable } from "./table/data-table";
 
-const UsersPage = () => {
-  const { data, isLoading, isError, refetch } = useUsers();
+const LogsPage = () => {
+  const { data, isLoading, isError, refetch } = useAdminActions();
 
   return (
     <Card className="shadow-md w-full">
@@ -28,7 +27,7 @@ const UsersPage = () => {
             <CardTitle
               className={cn("font-semibold uppercase", title.className)}
             >
-              System Users
+              System Logs
             </CardTitle>
             <CardDescription
               className={cn(
@@ -36,10 +35,9 @@ const UsersPage = () => {
                 description.className
               )}
             >
-              Manage user accounts and permissions.
+              Track and monitor all system activities and user actions.
             </CardDescription>
           </div>
-          <AddUserDialog onUpdate={() => refetch()} />
         </div>
       </CardHeader>
       <CardContent>
@@ -68,4 +66,4 @@ const UsersPage = () => {
   );
 };
 
-export default UsersPage;
+export default LogsPage;

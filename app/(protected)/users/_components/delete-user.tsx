@@ -7,43 +7,36 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useTransition } from "react";
-import { deleteUserById } from "@/actions/create-user";
+import React, { useState, useTransition } from "react";
+import { deleteUserById } from "@/actions/user-actions";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { useDeleteUser } from "@/hooks/use-functions-user";
 
 interface DeleteUserPopoverProps {
   user: any;
+  dialogOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  onUpdate: () => void;
 }
 
-export const DeleteUserPopover = ({ user }: DeleteUserPopoverProps) => {
-
-console.log("DeleteUserPopover user:", user);
-
-  const [isPending, startTransition] = useTransition();
+export const DeleteUserPopover = ({
+  user,
+  dialogOpen,
+  onUpdate,
+}: DeleteUserPopoverProps) => {
+  const [open, setOpen] = useState<boolean>(false);
   const [confirmationText, setConfirmationText] = useState<string>("");
-  const [open, setOpen] = useState(false);
+
+  const deleteUserMutation = useDeleteUser(() => {
+    setOpen(false);
+    dialogOpen?.(false);
+    onUpdate();
+  });
 
   async function deleteUser() {
-    startTransition(async () => {
-      if (confirmationText === user.name) {
-        const result = await deleteUserById(user.id);
-        if (result.success) {
-          toast(result?.success, {
-            description: `User: ${user.name} has been deleted successfully.`,
-            duration: 5000,
-            icon: <BadgeCheck className="text-green-500" size={20} />,
-          });
-        } else if (result?.error) {
-          toast(result?.error, {
-            description: "Uh oh! Something went wrong.",
-            duration: 5000,
-            icon: <TriangleAlert className="text-red-500" size={20} />,
-          });
-          setOpen(false);
-        }
-      }
-    });
+    if (confirmationText === user.name) {
+      deleteUserMutation.mutate(user.id);
+    }
   }
 
   return (
@@ -70,6 +63,9 @@ console.log("DeleteUserPopover user:", user);
           <Textarea
             placeholder={`Type ${user.name} in the box to confirm deletion.`}
             className="mb-4 resize-none text-justify"
+            value={confirmationText}
+            onChange={(e) => setConfirmationText(e.target.value)}
+            autoComplete="off"
           />
           <p className="text-muted-foreground italic">
             Note: This will permanently delete the user.
@@ -79,16 +75,9 @@ console.log("DeleteUserPopover user:", user);
             className="hover:bg-red-600/90 hover:text-white w-full text-red-600/90"
             size={"sm"}
             variant={"outline"}
-            disabled={isPending || confirmationText !== user?.name}
+            disabled={confirmationText !== user?.name}
           >
-            {isPending ? (
-              <>
-                <Spinner />
-                Deleting this user...
-              </>
-            ) : (
-              "Delete this user."
-            )}
+            Delete this user.
           </Button>
         </div>
       </PopoverContent>

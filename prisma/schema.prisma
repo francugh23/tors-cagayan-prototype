@@ -121,14 +121,14 @@ model Authority {
 }
 
 model Actions {
-  id              String      @id @default(cuid())
+  id              String       @id @default(cuid())
   code            String
-  travel_order_id String
+  travel_order_id String?
   user_id         String
   action          String
   remarks         String?
-  createdAt       DateTime    @default(now())
-  travelOrder     TravelOrder @relation(fields: [travel_order_id], references: [id])
+  createdAt       DateTime     @default(now())
+  travelOrder     TravelOrder? @relation(fields: [travel_order_id], references: [id])
 
   users User[]
 }
