@@ -15,6 +15,7 @@ import { title, description } from "@/components/fonts/font";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -46,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { useCreateTravelRequest } from "@/hooks/use-functions-travel-requests";
 
 interface ClientFormProps {
   user?: any;
@@ -55,6 +57,10 @@ interface ClientFormProps {
 export function ClientForm({ user, label }: ClientFormProps) {
   const [isPending, startTransition] = useTransition();
   const [designation, setDesignation] = useState<any>(null);
+
+  const createTravelRequestMutation = useCreateTravelRequest(() => {
+    form.reset();
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -79,87 +85,91 @@ export function ClientForm({ user, label }: ClientFormProps) {
       travel_period: "",
       destination: "",
       fund_source: "",
-      attached_file: undefined,
+      attached_file: "",
     },
   });
 
   async function onSubmit(data: z.infer<typeof TravelFormSchema>) {
+    // startTransition(async () => {
+    //   try {
+    //     let gdriveUrl: string;
+
+    //     // Since attachedFile is required, it must be a File
+    //     if (data.attached_file instanceof File) {
+    //       // Upload file to GDrive via your API route
+    //       const formData = new FormData();
+    //       formData.append("file", data.attached_file);
+
+    //       const uploadResponse = await fetch("/api/test-n8n", {
+    //         method: "POST",
+    //         body: formData,
+    //       });
+
+    //       if (!uploadResponse.ok) {
+    //         const errorData = await uploadResponse.json();
+    //         toast("Oops", {
+    //           description: errorData?.error || "File upload failed!",
+    //           duration: 5000,
+    //           icon: <TriangleAlert className="text-red-500" size={20} />,
+    //         });
+    //         return; // Exit early if upload fails
+    //       }
+
+    //       const { n8nResponse } = await uploadResponse.json();
+
+    //       // Extract the GDrive URL from n8n response
+    //       gdriveUrl = n8nResponse.webViewLink;
+
+    //       if (!gdriveUrl) {
+    //         toast("Oops", {
+    //           description: "No URL returned from file upload!",
+    //           duration: 5000,
+    //           icon: <TriangleAlert className="text-red-500" size={20} />,
+    //         });
+    //         return; // Exit early if no URL
+    //       }
+    //     } else {
+    //       throw new Error("File is required");
+    //     }
+
+    //     // Prepare data with GDrive URL instead of File object
+    //     const submitData = {
+    //       ...data,
+    //       attached_file: gdriveUrl, // Replace File object with URL string
+    //     };
+
+    //     // Call your existing action (it expects attached_file as string)
+    //     const result = await createTravelOrder(submitData);
+
+    //     if (result?.error) {
+    //       toast("Oops", {
+    //         description: result?.error || "An error occurred!",
+    //         duration: 5000,
+    //         icon: <TriangleAlert className="text-red-500" size={20} />,
+    //       });
+    //     } else if (result?.success) {
+    //       toast("Success", {
+    //         description: result?.success || "Travel order submitted!",
+    //         duration: 5000,
+    //         icon: <BadgeCheck className="text-green-500" size={20} />,
+    //       });
+    //       form.reset();
+    //     }
+    //   } catch (error) {
+    //     console.error("Error submitting travel order:", error);
+    //     toast("Oops!", {
+    //       description:
+    //         error instanceof Error
+    //           ? error.message
+    //           : "An unexpected error occurred. Please try again.",
+    //       duration: 5000,
+    //       icon: <TriangleAlert size={20} />,
+    //     });
+    //   }
+    // });
+
     startTransition(async () => {
-      try {
-        let gdriveUrl: string;
-
-        // Since attachedFile is required, it must be a File
-        if (data.attached_file instanceof File) {
-          // Upload file to GDrive via your API route
-          const formData = new FormData();
-          formData.append("file", data.attached_file);
-
-          const uploadResponse = await fetch("/api/test-n8n", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            toast("Oops", {
-              description: errorData?.error || "File upload failed!",
-              duration: 5000,
-              icon: <TriangleAlert className="text-red-500" size={20} />,
-            });
-            return; // Exit early if upload fails
-          }
-
-          const { n8nResponse } = await uploadResponse.json();
-
-          // Extract the GDrive URL from n8n response
-          gdriveUrl = n8nResponse.webViewLink;
-
-          if (!gdriveUrl) {
-            toast("Oops", {
-              description: "No URL returned from file upload!",
-              duration: 5000,
-              icon: <TriangleAlert className="text-red-500" size={20} />,
-            });
-            return; // Exit early if no URL
-          }
-        } else {
-          throw new Error("File is required");
-        }
-
-        // Prepare data with GDrive URL instead of File object
-        const submitData = {
-          ...data,
-          attached_file: gdriveUrl, // Replace File object with URL string
-        };
-
-        // Call your existing action (it expects attached_file as string)
-        const result = await createTravelOrder(submitData);
-
-        if (result?.error) {
-          toast("Oops", {
-            description: result?.error || "An error occurred!",
-            duration: 5000,
-            icon: <TriangleAlert className="text-red-500" size={20} />,
-          });
-        } else if (result?.success) {
-          toast("Success", {
-            description: result?.success || "Travel order submitted!",
-            duration: 5000,
-            icon: <BadgeCheck className="text-green-500" size={20} />,
-          });
-          form.reset();
-        }
-      } catch (error) {
-        console.error("Error submitting travel order:", error);
-        toast("Oops!", {
-          description:
-            error instanceof Error
-              ? error.message
-              : "An unexpected error occurred. Please try again.",
-          duration: 5000,
-          icon: <TriangleAlert size={20} />,
-        });
-      }
+      createTravelRequestMutation.mutate(data);
     });
   }
 
@@ -231,7 +241,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                   />
                 </div>
 
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="attached_file"
                   render={({ field: { value, onChange } }) => (
@@ -247,6 +257,28 @@ export function ClientForm({ user, label }: ClientFormProps) {
                           maxSize={2 * 1024 * 1024}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                /> */}
+                <FormField
+                  control={form.control}
+                  name="attached_file"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Supporting Document
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          className="h-10 font-medium"
+                          {...field}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Please provide the link to your supporting document.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

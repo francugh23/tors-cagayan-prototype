@@ -26,13 +26,15 @@ import { DataTablePaginationNoCheckBox } from "@/components/data-table/paginatio
 import { ViewTravelOrderDialog } from "../_components/view-travel-order";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+  columns: ColumnDef<TData, TValue>[];  
   data: TData[];
+  onUpdate?: () => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onUpdate,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -105,6 +107,7 @@ export function DataTable<TData, TValue>({
                       }
                       // @ts-ignore
                       travelDetails={row.original}
+                      onUpdate={onUpdate}
                     />
                   ))}
                 </TableRow>

@@ -15,25 +15,11 @@ import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/app/(protected)/home/table/data-table";
 import { columns, TravelRequest } from "@/app/(protected)/home/table/columns";
 import { fetchTravelOrdersById } from "@/actions/travel-order";
+import { useTravelOrders } from "@/hooks/use-travel-orders";
+import { CircleAlert } from "lucide-react";
 
 const HomePage = () => {
-  const [data, setData] = useState<TravelRequest[]>([]);
-  const [state, setState] = useState<"ready" | "loading" | "error">("loading");
-
-  useEffect(() => {
-    async function fetchData() {
-      setState("loading");
-      try {
-        const res = await fetchTravelOrdersById();
-        setData(res);
-        setState("ready");
-      } catch (e) {
-        setState("error");
-        return null;
-      }
-    }
-    fetchData();
-  }, []);
+  const {data, isLoading, isError, refetch } = useTravelOrders();
 
   return (
     <Card>
@@ -57,12 +43,25 @@ const HomePage = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {state === "loading" && <Skeleton className="w-full h-[200px]" />}
-        {state === "ready" && (
+        {isLoading && <Skeleton className="w-full h-[200px]" />}
+
+        {!isLoading && !isError && (
           <>
             <Separator />
-            <DataTable data={data} columns={columns} />
+            <DataTable
+              data={data}
+              columns={columns}
+              onUpdate={() => refetch()}
+            />
           </>
+        )}
+        {isError && (
+          <div className="flex flex-col items-center space-y-2 mt-2">
+            <CircleAlert size={50} className="text-red-600" />
+            <p className="text-center font-semibold">
+              Error loading data. Please try again later.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

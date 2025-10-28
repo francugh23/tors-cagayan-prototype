@@ -43,11 +43,13 @@ import { toast } from "sonner";
 interface ViewTravelOrderDialogProps {
   trigger: React.ReactNode;
   travelDetails: TravelRequest;
+  onUpdate?: () => void;
 }
 
 export function ViewTravelOrderDialog({
   trigger,
   travelDetails,
+  onUpdate,
 }: ViewTravelOrderDialogProps) {
   const [open, setOpen] = useState(false);
 

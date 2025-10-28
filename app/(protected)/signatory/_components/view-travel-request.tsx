@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner";
 import { updateTravelRequestById } from "@/actions/travel-order";
 import { RemarksModal } from "./travel-request-remarks";
+import { useUpdateTravelRequest } from "@/hooks/use-functions-travel-requests";
 
 interface ViewTravelRequestProps {
   trigger: React.ReactNode;
@@ -47,7 +48,6 @@ export function ViewTravelRequestDialog({
   travelDetails,
 }: ViewTravelRequestProps) {
   const user = useCurrentUser();
-
   const [open, setOpen] = useState(false);
 
   const isRecommending =
@@ -57,35 +57,13 @@ export function ViewTravelRequestDialog({
   const isApproving =
     travelDetails.authority?.approving_position_id === user?.user?.position_id;
 
-  const updateRequest = async () => {
-    try {
-      const result = await updateTravelRequestById(
-        travelDetails.id,
-        user?.user?.id
-      );
+  const updateTravelRequestMutation = useUpdateTravelRequest(() => {
+    onUpdate();
+    setOpen(false);
+  });
 
-      if (result?.error) {
-        toast("Oops", {
-          description: result?.error || "An error occurred!",
-          duration: 5000,
-          icon: <TriangleAlert className="text-red-500" size={20} />,
-        });
-      } else {
-        toast("Success", {
-          description: result?.success || "Travel order approved!",
-          duration: 5000,
-          icon: <BadgeCheck className="text-green-500" size={20} />,
-        });
-        onUpdate();
-        setOpen(false);
-      }
-    } catch (error) {
-      toast("Oops!", {
-        description: "An unexpected error occurred. Please try again.",
-        duration: 5000,
-        icon: <TriangleAlert size={20} />,
-      });
-    }
+  const updateRequest = async () => {
+    updateTravelRequestMutation.mutate(travelDetails.id, user.uid);
   };
 
   return (

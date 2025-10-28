@@ -2,13 +2,13 @@
 
 import * as z from "zod";
 import prisma from "@/lib/db";
-import { RemarksSchema, TravelFormSchemaSaveToDB } from "@/schemas";
+import { RemarksSchema, TravelFormSchema } from "@/schemas";
 import { DesignationType } from "@prisma/client";
 import { formatTravelPeriod } from "@/actions/helper";
 import { getCurrentUser } from "@/actions/server";
 
 export const createTravelOrder = async (
-  values: z.infer<typeof TravelFormSchemaSaveToDB>
+  values: z.infer<typeof TravelFormSchema>
 ) => {
   const generateCode = async () => {
     const now = new Date();
@@ -38,7 +38,7 @@ export const createTravelOrder = async (
     return code;
   };
 
-  const validatedFields = TravelFormSchemaSaveToDB.safeParse(values);
+  const validatedFields = TravelFormSchema.safeParse(values);
 
   if (!validatedFields.success) {
     return { error: "Invalid fields!" };
@@ -218,13 +218,13 @@ export async function fetchTravelOrdersForSignatory() {
   }
 }
 
-export const updateTravelRequestById = async (id: string, userId: string) => {
+export const updateTravelRequestById = async (data: { id: string; userId: string }) => {
   try {
     await prisma.$connect();
 
     const user = await prisma.user.findUnique({
       where: {
-        id: userId,
+        id: data.userId,
       },
       select: {
         position_id: true,
@@ -236,7 +236,7 @@ export const updateTravelRequestById = async (id: string, userId: string) => {
     }
 
     const travelOrder = await prisma.travelOrder.findUnique({
-      where: { id: id },
+      where: { id: data.id },
       include: {
         authority: {
           include: {
