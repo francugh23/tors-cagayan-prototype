@@ -3,7 +3,7 @@
 import * as z from "zod";
 import prisma from "@/lib/db";
 import { RemarksSchema, TravelFormSchema } from "@/schemas";
-import { DesignationType } from "@prisma/client";
+import { DesignationType, PositionType, RequestType } from "@prisma/client";
 import { formatTravelPeriod } from "@/actions/helper";
 import { getCurrentUser } from "@/actions/server";
 
@@ -45,7 +45,7 @@ export const createTravelOrder = async (
   }
 
   const {
-    requester_type,
+    request_type,
     requester_name,
     position,
     purpose,
@@ -60,6 +60,8 @@ export const createTravelOrder = async (
 
   const user = await getCurrentUser();
 
+  // START OF ASSIGNING AUTHORITY LOGIC
+
   let authority;
 
   const designation = await prisma.designation.findUnique({
@@ -70,20 +72,125 @@ export const createTravelOrder = async (
     },
   });
 
-  if (designation?.type === DesignationType.SDO) {
-    const ASDS_ELEM_OFFICES = ["OSDS"];
+  const asds_elem = await prisma.position.findUnique({
+    where: {
+      type: PositionType.ASDS_ELEM,
+    },
+    select: {
+      id: true,
+    },
+  });
 
-    if (ASDS_ELEM_OFFICES.includes(designation.code)) {
+  const asds_sec = await prisma.position.findUnique({
+    where: {
+      type: PositionType.ASDS_SEC,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const school_head = await prisma.position.findUnique({
+    where: {
+      type: PositionType.SCHOOL_HEAD,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const sds = await prisma.position.findUnique({
+    where: {
+      type: PositionType.SDS,
+    },
+    select: {
+      id: true,
+    }
+  })
+
+  const ASDS_ELEM_OFFICES = ["OSDS", "CID", "FS-R", "FS-C", "PO", "AS"];
+  const ASDS_SEC_OFFICES = ["SGOD", "ICTU", "AM", "LEG", "BUD"];
+
+  //  SDO
+  if (
+    request_type === RequestType.ANY &&
+    designation?.type === DesignationType.SDO
+  ) {
+    if (ASDS_ELEM_OFFICES.includes(designation.code as string)) {
       authority = await prisma.authority.findFirst({
         where: {
-          request_type: requester_type,
-          designation_type: designation.type,
+          recommending_position_id: asds_elem?.id,
+          request_type: RequestType.ANY,
+          designation_type: DesignationType.SDO,
         },
-        select: {
-          id: true,
+      });
+    } else if (ASDS_SEC_OFFICES.includes(designation?.code as string)) {
+      authority = await prisma.authority.findFirst({
+        where: {
+          recommending_position_id: asds_sec?.id,
+          request_type: RequestType.ANY,
+          designation_type: DesignationType.SDO,
         },
       });
     }
+
+    // WITHIN_DIVISION ELEMENTARY NON-SCHOOL HEADS
+  } else if (
+    request_type === RequestType.WITHIN_DIVISION &&
+    designation?.type === DesignationType.ELEMENTARY &&
+    designation?.code?.startsWith("1")
+  ) {
+    authority = await prisma.authority.findFirst({
+      where: {
+        approving_position_id: school_head?.id,
+        request_type: RequestType.WITHIN_DIVISION,
+        designation_type: DesignationType.ELEMENTARY,
+      },
+    });
+
+    // WITHIN_DIVISION SECONDARY NON-SCHOOL HEADS
+  } else if (
+    request_type === RequestType.WITHIN_DIVISION &&
+    designation?.type === DesignationType.SECONDARY &&
+    designation?.code?.startsWith("3")
+  ) {
+    authority = await prisma.authority.findFirst({
+      where: {
+        approving_position_id: school_head?.id,
+        request_type: RequestType.WITHIN_DIVISION,
+        designation_type: DesignationType.SECONDARY,
+      },
+    });
+
+    // OUTSIDE_DIVISION ELEMENTARY NON-SCHOOL HEADS
+  } else if (
+    request_type === RequestType.OUTSIDE_DIVISION &&
+    designation?.type === DesignationType.ELEMENTARY &&
+    designation?.code?.startsWith("1")
+  ) {
+    authority = await prisma.authority.findFirst({
+      where: {
+        recommending_position_id: school_head?.id,
+        approving_position_id: sds?.id,
+        request_type: RequestType.OUTSIDE_DIVISION,
+        designation_type: DesignationType.ELEMENTARY,
+      },
+    });
+
+    // OUTSIDE_DIVISION SECONDARY NON-SCHOOL HEADS
+  } else if (
+    request_type === RequestType.OUTSIDE_DIVISION &&
+    designation?.type === DesignationType.SECONDARY &&
+    designation?.code?.startsWith("3")
+  ) {
+    authority = await prisma.authority.findFirst({
+      where: {
+        recommending_position_id: school_head?.id,
+        approving_position_id: sds?.id,
+        request_type: RequestType.OUTSIDE_DIVISION,
+        designation_type: DesignationType.SECONDARY,
+      },
+    });
   }
 
   if (!authority) {
@@ -92,19 +199,21 @@ export const createTravelOrder = async (
     };
   }
 
+  // END OF ASSIGNING AUTHORITY LOGIC
+
   try {
     const travel_order = await prisma.travelOrder.create({
       data: {
         code: await generateCode(),
-        request_type: requester_type,
+        request_type: request_type,
         requester_id: user?.user?.id as string,
-        requester_name: requester_name,
-        position: position,
-        purpose: purpose,
-        host: host,
+        requester_name: requester_name.toUpperCase(),
+        position: position.toUpperCase(),
+        purpose: purpose.toUpperCase(),
+        host: host.toUpperCase(),
         travel_period: formattedTravelPeriod,
-        destination: destination,
-        fund_source: fund_source,
+        destination: destination.toUpperCase(),
+        fund_source: fund_source.toUpperCase(),
         attached_file: attached_file,
         authority_id: authority.id,
         recommending_status: "Pending",
@@ -218,7 +327,10 @@ export async function fetchTravelOrdersForSignatory() {
   }
 }
 
-export const updateTravelRequestById = async (data: { id: string; userId: string }) => {
+export const updateTravelRequestById = async (data: {
+  id: string;
+  userId: string;
+}) => {
   try {
     await prisma.$connect();
 
@@ -268,11 +380,11 @@ export const updateTravelRequestById = async (data: { id: string; userId: string
       };
     }
 
-    if (isApproving && travelOrder.recommending_status !== "Approved") {
-      return {
-        error: "Travel order must be recommended before final approval!",
-      };
-    }
+    // if (isApproving && travelOrder.recommending_status !== "Approved") {
+    //   return {
+    //     error: "Travel order must be recommended before final approval!",
+    //   };
+    // }
 
     if (isRecommending) {
       if (travelOrder.recommending_status !== "Pending") {
@@ -280,7 +392,7 @@ export const updateTravelRequestById = async (data: { id: string; userId: string
       }
 
       await prisma.travelOrder.update({
-        where: { id: id },
+        where: { id: data.id },
         data: {
           recommending_status: "Approved",
           updatedAt: new Date(),
@@ -297,8 +409,9 @@ export const updateTravelRequestById = async (data: { id: string; userId: string
       }
 
       await prisma.travelOrder.update({
-        where: { id: id },
+        where: { id: data.id },
         data: {
+          recommending_status: "Approved",
           approving_status: "Approved",
           updatedAt: new Date(),
         },
@@ -310,11 +423,11 @@ export const updateTravelRequestById = async (data: { id: string; userId: string
         code: `${isRecommending ? "RECOMMENDED" : "APPROVED"}-${
           travelOrder.code
         }`,
-        travel_order_id: id,
+        travel_order_id: data.id,
         action: `${
           isRecommending ? "Recommended" : "Approved"
         } a travel order request.`,
-        user_id: userId,
+        user_id: data.userId,
         createdAt: new Date(),
       },
     });
@@ -323,6 +436,81 @@ export const updateTravelRequestById = async (data: { id: string; userId: string
   } catch (error) {
     console.error("Approval error:", error);
     return { error: "Failed to approve travel order request!", details: error };
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const forwardTravelRequestById = async (data: {
+  id: string;
+  userId: string;
+}) => {
+  try {
+    await prisma.$connect();
+
+    // 1️⃣ Find the travel request
+    const travelOrder = await prisma.travelOrder.findUnique({
+      where: { id: data.id },
+      include: {
+        authority: true,
+      },
+    });
+
+    if (!travelOrder) return { error: "Travel request not found!" };
+
+    // 2️⃣ Check if still pending
+    if (
+      travelOrder.recommending_status !== "Pending" ||
+      travelOrder.approving_status !== "Pending"
+    ) {
+      return { error: "Cannot forward a processed travel request!" };
+    }
+
+    // 3️⃣ Ensure the user is the current recommending signatory
+    const user = await prisma.user.findUnique({
+      where: { id: data.userId },
+      select: { position_id: true, name: true },
+    });
+
+    if (!user?.position_id) return { error: "User position not found!" };
+
+    if (travelOrder.authority?.recommending_position_id !== user.position_id) {
+      return { error: "You are not authorized to forward this request!" };
+    }
+
+    // 4️⃣ Find the "other" ASDS authority with the same approving_position_id
+    const otherAuthority = await prisma.authority.findFirst({
+      where: {
+        approving_position_id: travelOrder.authority.approving_position_id,
+        id: { not: travelOrder.authority_id },
+      },
+    });
+
+    if (!otherAuthority)
+      return { error: "No other authority found to forward to!" };
+
+    // 5️⃣ Update the travel order’s authority_id to the other ASDS
+    await prisma.travelOrder.update({
+      where: { id: data.id },
+      data: {
+        authority_id: otherAuthority.id,
+        updatedAt: new Date(),
+      },
+    });
+
+    // 6️⃣ Log the forwarding action
+    await prisma.actions.create({
+      data: {
+        code: `FWD-${travelOrder.code}`,
+        user_id: data.userId,
+        action: `Forwarded travel request to another ASDS authority.`,
+      },
+    });
+
+    return { success: "Travel request successfully forwarded!" };
+  } catch (error) {
+    console.error("Forwarding error:", error);
+    return { error: "Failed to forward travel request!" };
   } finally {
     await prisma.$disconnect();
   }

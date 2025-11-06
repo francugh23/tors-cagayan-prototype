@@ -9,12 +9,10 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
-import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/app/(protected)/home/table/data-table";
-import { columns, TravelRequest } from "@/app/(protected)/home/table/columns";
-import { fetchTravelOrdersById } from "@/actions/travel-order";
+import { columns } from "@/app/(protected)/home/table/columns";
 import { useTravelOrders } from "@/hooks/use-travel-orders";
 import { CircleAlert } from "lucide-react";
 

@@ -105,9 +105,8 @@ export function DataTable<TData, TValue>({
                           )}
                         </TableCell>
                       }
-                      onUpdate={onUpdate}
-                      // @ts-ignore
                       travelDetails={row.original}
+                      onUpdate={onUpdate}
                     />
                   ))}
                 </TableRow>

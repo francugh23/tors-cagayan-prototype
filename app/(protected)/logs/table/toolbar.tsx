@@ -1,12 +1,10 @@
 "use client";
 
-import { UserPlus2, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { Table } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DataTableViewOptions } from "@/components/data-table/view-options";
-import { DataTableFacetedFilter } from "@/components/data-table/faceted-filter";
+import { Input } from "@/components/ui/input"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;

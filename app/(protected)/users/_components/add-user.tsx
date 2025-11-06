@@ -100,8 +100,8 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
     }
   }, [role, form, disabledRoles]);
 
-  const onSubmit = (data: z.infer<typeof AddUserSchema>) => {
-    createUserMutation.mutate(data);
+  async function onSubmit(data: z.infer<typeof AddUserSchema>) {
+    await createUserMutation.mutateAsync(data);
   };
 
   return (
@@ -289,7 +289,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                     return (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">
-                          Division/Section/Unit
+                          Division/Section/Unit/School
                         </FormLabel>
 
                         <Popover open={open} onOpenChange={setOpen}>
@@ -315,7 +315,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                           >
                             <Command>
                               <CommandInput placeholder="Search designation..." />
-                              <CommandList>
+                              <CommandList className="overflow-y-hidden">
                                 <CommandEmpty>
                                   No designations found.
                                 </CommandEmpty>

@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,13 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { Label } from "@/components/ui/label";
 import { TravelRequest } from "../table/columns";
-import { FaFilePdf, FaHotel, FaUsers } from "react-icons/fa";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { TravelOrderPDF } from "@/components/custom/pdf-file";
+import { FaFileWord, FaHotel, FaUsers } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { title, description } from "@/components/fonts/font";
 import { cn } from "@/lib/utils";
@@ -36,9 +31,7 @@ import {
   OctagonX,
   PhilippinePeso,
   Navigation,
-  TriangleAlert,
 } from "lucide-react";
-import { toast } from "sonner";
 
 interface ViewTravelOrderDialogProps {
   trigger: React.ReactNode;
@@ -49,54 +42,15 @@ interface ViewTravelOrderDialogProps {
 export function ViewTravelOrderDialog({
   trigger,
   travelDetails,
-  onUpdate,
 }: ViewTravelOrderDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleDownloadAuthorizedTravel = async () => {
-    try {
-      const requestData = {
-        requester_name: travelDetails.requester_name,
-        position: travelDetails.position,
-        travel_order_code: travelDetails.code,
-        updated_at: new Date().toISOString(),
-      };
-
-      const response = await fetch("/api/generate-travel-document", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate travel document");
-      }
-
-      const result = await response.json();
-      const gdriveUrl = result.gdriveUrl || result.url || result.fileUrl;
-
-      if (!gdriveUrl) {
-        throw new Error("No document URL returned from system");
-      }
-
-      // Open the document in a new tab
-      window.open(gdriveUrl, "_blank");
-
-      toast("Success", {
-        description: "Travel document generated successfully!",
-        duration: 5000,
-        icon: <BadgeCheck className="text-green-500" size={20} />,
-      });
-    } catch (error) {
-      console.error("Error generating travel document:", error);
-      toast("Oops!", {
-        description: "Failed to generate travel document. Please try again.",
-        duration: 5000,
-        icon: <TriangleAlert size={20} />,
-      });
-    }
+  const handleDownload = () => {
+    startTransition(() => {
+      window.open(`/api/travel/download/${travelDetails.id}`);
+      setOpen(false);
+    });
   };
 
   return (
@@ -317,11 +271,13 @@ export function ViewTravelOrderDialog({
               <CardContent className="p-4 space-y-2">
                 {travelDetails.attached_file ? (
                   <iframe
-                    src={`https://drive.google.com/file/d/${
-                      travelDetails.attached_file
-                        .split("/d/")[1]
-                        .split("/view")[0]
-                    }/preview`}
+                    src={
+                      `https://drive.google.com/file/d/${
+                        travelDetails.attached_file
+                          .split("/d/")[1]
+                          .split("/view")[0]
+                      }/preview` || ""
+                    }
                     style={{ width: "100%", height: "500px", border: "none" }}
                     title="Attached File"
                   />
@@ -334,12 +290,10 @@ export function ViewTravelOrderDialog({
         </div>
 
         <DialogFooter className="bg-slate-50 p-6 rounded-b-lg border-t">
-          {(!travelDetails.recommending_status &&
-            travelDetails.recommending_status !== "Approved") ||
-          (!travelDetails.approving_status &&
-            travelDetails.approving_status !== "Approved") ? (
+          {travelDetails.recommending_status !== "Approved" ||
+          travelDetails.approving_status !== "Approved" ? (
             <Badge
-              variant={"destructive"}
+              variant="destructive"
               className={cn(
                 "items-center w-fit px-2 py-1 text-sm",
                 description.className
@@ -353,10 +307,13 @@ export function ViewTravelOrderDialog({
                 "hover:bg-primary/90 text-white w-full",
                 description.className
               )}
-              onClick={handleDownloadAuthorizedTravel}
+              onClick={handleDownload}
+              disabled={isPending}
             >
-              <FaFilePdf className="h-4 w-4" />
-              Download Authorized Travel
+              <FaFileWord className="h-4 w-4" />
+              {isPending
+                ? "Preparing Download..."
+                : "Download Authorized Travel"}
             </Button>
           )}
         </DialogFooter>

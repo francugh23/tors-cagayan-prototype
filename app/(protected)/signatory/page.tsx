@@ -17,7 +17,7 @@ import { useTravelRequestsForSignatory } from "@/hooks/use-travel-orders";
 import { CircleAlert } from "lucide-react";
 
 const SignatoryPage = () => {
-  const { data, isLoading, isError, refetch } = useTravelRequestsForSignatory();
+  const { data, isLoading, isError, refetch } = useTravelRequestsForSignatory()
 
   return (
     <Card>

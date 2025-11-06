@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   createTravelOrder,
+  forwardTravelRequestById,
   updateTravelRequestById,
 } from "@/actions/travel-order";
 import type { z } from "zod";
@@ -29,12 +30,38 @@ export function useCreateTravelRequest(onSuccess?: () => void) {
   });
 }
 
-// UPDATE
+// UPDATE TRAVEL REQUEST
 export function useUpdateTravelRequest(onSuccess?: () => void) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { id: string; userId: string }) => {
-      const result = await updateTravelRequestById(data);
+      const result = await updateTravelRequestById({
+        id: data.id,
+        userId: data.userId,
+      });
+      if (result?.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: (result) => {
+      toast.success(result.success);
+      queryClient.invalidateQueries({ queryKey: ["travelRequests"] });
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Something went wrong.");
+    },
+  });
+}
+
+// FORWARD TRAVEL REQUEST
+export function useForwardTravelRequest(onSuccess?: () => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { id: string; userId: string }) => {
+      const result = await forwardTravelRequestById({
+        id: data.id,
+        userId: data.userId,
+      });
       if (result?.error) throw new Error(result.error);
       return result;
     },

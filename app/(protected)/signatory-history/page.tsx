@@ -9,38 +9,17 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
-import { useEffect, useState } from "react";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/app/(protected)/signatory-history/table/data-table";
 import { columns } from "@/app/(protected)/signatory-history/table/columns";
-import { fetchActionsHistory } from "@/actions/actions-history";
+import { useSignatoryHistory } from "@/hooks/use-travel-orders";
+import { CircleAlert } from "lucide-react";
 
 const SignatoryHistoryPage = () => {
-  const user = useCurrentUser();
-  const [data, setData] = useState<any[]>([]);
-  const [state, setState] = useState<"ready" | "loading" | "error">("loading");
+  const { data, isLoading, isError, refetch } = useSignatoryHistory();
 
-  useEffect(() => {
-    async function fetchData() {
-      setState("loading");
-      try {
-        const res = await fetchActionsHistory();
-        setData(res);
-        setState("ready");
-      } catch (e) {
-        setState("error");
-        return null;
-      }
-    }
-    fetchData();
-  }, []);
-
-  async function refetchData() {
-    const res = await fetchActionsHistory();
-    setData(res);
-  }
+  console.log(data)
 
   return (
     <Card>
@@ -64,12 +43,25 @@ const SignatoryHistoryPage = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {state === "loading" && <Skeleton className="w-full h-[200px]" />}
-        {state === "ready" && (
+        {isLoading && <Skeleton className="w-full h-[200px]" />}
+
+        {!isLoading && !isError && (
           <>
             <Separator />
-            <DataTable data={data} columns={columns} onUpdate={refetchData} />
+            <DataTable
+              data={data}
+              columns={columns}
+              onUpdate={() => refetch()}
+            />
           </>
+        )}
+        {isError && (
+          <div className="flex flex-col items-center space-y-2 mt-2">
+            <CircleAlert size={50} className="text-red-600" />
+            <p className="text-center font-semibold">
+              Error loading data. Please try again later.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

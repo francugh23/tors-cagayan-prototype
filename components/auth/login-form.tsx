@@ -117,7 +117,7 @@ export const LoginForm = () => {
                     <Input
                       {...field}
                       type="email"
-                      placeholder="sample@gmail.com"
+                      placeholder="your_account@dev.gov.ph"
                       disabled={isPending}
                       autoComplete="off"
                     />
@@ -136,7 +136,7 @@ export const LoginForm = () => {
                     <Input
                       {...field}
                       type="password"
-                      placeholder="secret"
+                      placeholder="Your secret password..."
                       disabled={isPending}
                     />
                   </FormControl>

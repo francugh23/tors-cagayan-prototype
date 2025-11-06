@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,12 +29,11 @@ import {
   Navigation,
   OctagonX,
   PhilippinePeso,
-  TriangleAlert,
 } from "lucide-react";
-import { toast } from "sonner";
-import { updateTravelRequestById } from "@/actions/travel-order";
 import { RemarksModal } from "./travel-request-remarks";
 import { useUpdateTravelRequest } from "@/hooks/use-functions-travel-requests";
+import { ForwardModal } from "./forward-travel-request";
+import { PositionType } from "@prisma/client";
 
 interface ViewTravelRequestProps {
   trigger: React.ReactNode;
@@ -57,13 +56,22 @@ export function ViewTravelRequestDialog({
   const isApproving =
     travelDetails.authority?.approving_position_id === user?.user?.position_id;
 
+  const isSchoolHead =
+    travelDetails?.authority?.recommending_position?.type ===
+    PositionType.SCHOOL_HEAD;
+
+  console.log(isSchoolHead);
+
   const updateTravelRequestMutation = useUpdateTravelRequest(() => {
     onUpdate();
     setOpen(false);
   });
 
   const updateRequest = async () => {
-    updateTravelRequestMutation.mutate(travelDetails.id, user.uid);
+    updateTravelRequestMutation.mutate({
+      id: travelDetails.id,
+      userId: user.uid,
+    });
   };
 
   return (
@@ -301,6 +309,16 @@ export function ViewTravelRequestDialog({
         </div>
 
         <DialogFooter className="bg-slate-50 p-6 rounded-b-lg border-t">
+          {isRecommending && !isApproving && !isSchoolHead ? (
+            <ForwardModal
+              user={user}
+              travelDetails={travelDetails}
+              onUpdate={onUpdate}
+            />
+          ) : (
+            isSchoolHead && isRecommending && !isApproving && <></>
+          )}
+
           <RemarksModal
             user={user}
             travelDetails={travelDetails}

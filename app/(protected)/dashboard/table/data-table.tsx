@@ -21,8 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DataTablePaginationNoCheckBox } from "@/components/data-table/pagination-no-checkbox";
-import { DataTableToolbar } from "./toolbar";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -63,7 +61,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4 my-2">
-      <DataTableToolbar table={table} />
+      {/* <DataTableToolbar table={table} /> */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -114,7 +112,6 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePaginationNoCheckBox table={table} />
     </div>
   );
 }

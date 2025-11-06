@@ -24,8 +24,7 @@ import {
 import { useForm } from "react-hook-form";
 import NonFormInput from "../../../../components/custom/nonform-input";
 
-import { useEffect, useState, useTransition } from "react";
-import { fetchDesignationById } from "@/data/stations";
+import { useTransition } from "react";
 import { TravelFormSchema } from "@/schemas";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,10 +32,6 @@ import { Separator } from "../../../../components/ui/separator";
 import { Input } from "../../../../components/ui/input";
 import { Textarea } from "../../../../components/ui/textarea";
 import { Button } from "../../../../components/ui/button";
-import { BadgeCheck, TriangleAlert } from "lucide-react";
-import { createTravelOrder } from "@/actions/travel-order";
-import { toast } from "sonner";
-import { SingleFileUpload } from "./single-file-upload";
 import { DateRangePicker } from "./date-range-picker";
 import { RequestType } from "@prisma/client";
 import {
@@ -48,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useCreateTravelRequest } from "@/hooks/use-functions-travel-requests";
+import { useDesignationById } from "@/hooks/use-designations";
 
 interface ClientFormProps {
   user?: any;
@@ -56,28 +52,16 @@ interface ClientFormProps {
 
 export function ClientForm({ user, label }: ClientFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [designation, setDesignation] = useState<any>(null);
+  const { data: designation } = useDesignationById(user?.user?.designation_id);
 
   const createTravelRequestMutation = useCreateTravelRequest(() => {
     form.reset();
   });
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetchDesignationById(user?.user?.designation_id);
-        setDesignation(res);
-      } catch (e) {
-        return null;
-      }
-    }
-    fetchData();
-  }, [user?.user?.designation_id]);
-
   const form = useForm<z.infer<typeof TravelFormSchema>>({
     resolver: zodResolver(TravelFormSchema),
     defaultValues: {
-      requester_type: RequestType.WITHIN_DIVISION,
+      request_type: RequestType.ANY,
       requester_name: "",
       position: "",
       purpose: "",
@@ -90,87 +74,9 @@ export function ClientForm({ user, label }: ClientFormProps) {
   });
 
   async function onSubmit(data: z.infer<typeof TravelFormSchema>) {
-    // startTransition(async () => {
-    //   try {
-    //     let gdriveUrl: string;
-
-    //     // Since attachedFile is required, it must be a File
-    //     if (data.attached_file instanceof File) {
-    //       // Upload file to GDrive via your API route
-    //       const formData = new FormData();
-    //       formData.append("file", data.attached_file);
-
-    //       const uploadResponse = await fetch("/api/test-n8n", {
-    //         method: "POST",
-    //         body: formData,
-    //       });
-
-    //       if (!uploadResponse.ok) {
-    //         const errorData = await uploadResponse.json();
-    //         toast("Oops", {
-    //           description: errorData?.error || "File upload failed!",
-    //           duration: 5000,
-    //           icon: <TriangleAlert className="text-red-500" size={20} />,
-    //         });
-    //         return; // Exit early if upload fails
-    //       }
-
-    //       const { n8nResponse } = await uploadResponse.json();
-
-    //       // Extract the GDrive URL from n8n response
-    //       gdriveUrl = n8nResponse.webViewLink;
-
-    //       if (!gdriveUrl) {
-    //         toast("Oops", {
-    //           description: "No URL returned from file upload!",
-    //           duration: 5000,
-    //           icon: <TriangleAlert className="text-red-500" size={20} />,
-    //         });
-    //         return; // Exit early if no URL
-    //       }
-    //     } else {
-    //       throw new Error("File is required");
-    //     }
-
-    //     // Prepare data with GDrive URL instead of File object
-    //     const submitData = {
-    //       ...data,
-    //       attached_file: gdriveUrl, // Replace File object with URL string
-    //     };
-
-    //     // Call your existing action (it expects attached_file as string)
-    //     const result = await createTravelOrder(submitData);
-
-    //     if (result?.error) {
-    //       toast("Oops", {
-    //         description: result?.error || "An error occurred!",
-    //         duration: 5000,
-    //         icon: <TriangleAlert className="text-red-500" size={20} />,
-    //       });
-    //     } else if (result?.success) {
-    //       toast("Success", {
-    //         description: result?.success || "Travel order submitted!",
-    //         duration: 5000,
-    //         icon: <BadgeCheck className="text-green-500" size={20} />,
-    //       });
-    //       form.reset();
-    //     }
-    //   } catch (error) {
-    //     console.error("Error submitting travel order:", error);
-    //     toast("Oops!", {
-    //       description:
-    //         error instanceof Error
-    //           ? error.message
-    //           : "An unexpected error occurred. Please try again.",
-    //       duration: 5000,
-    //       icon: <TriangleAlert size={20} />,
-    //     });
-    //   }
-    // });
-
     startTransition(async () => {
       createTravelRequestMutation.mutate(data);
-    });
+    })
   }
 
   return (
@@ -210,7 +116,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">
-                          Requester's Name
+                          Requester&apos;s Name
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -227,7 +133,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 <div className="space-y-2">
                   <NonFormInput
                     label="Permanent Division/Section/Unit"
-                    defaultValue={designation?.type || ""}
+                    defaultValue={designation?.type ?? ""}
                     readOnly
                     className="text-sm font-medium"
                   />
@@ -235,32 +141,11 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 <div className="space-y-2">
                   <NonFormInput
                     label="Office"
-                    defaultValue={designation?.code || ""}
+                    defaultValue={designation?.name ?? ""}
                     readOnly
                     className="text-sm font-medium"
                   />
                 </div>
-
-                {/* <FormField
-                  control={form.control}
-                  name="attached_file"
-                  render={({ field: { value, onChange } }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Supporting Document
-                      </FormLabel>
-                      <FormControl>
-                        <SingleFileUpload
-                          value={value as unknown as File | null}
-                          onChange={onChange}
-                          accept="/pdf"
-                          maxSize={2 * 1024 * 1024}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
                 <FormField
                   control={form.control}
                   name="attached_file"
@@ -291,7 +176,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        Requester's Position
+                        Requester&apos;s Position
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -383,35 +268,39 @@ export function ClientForm({ user, label }: ClientFormProps) {
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <FormField
-                    control={form.control}
-                    name="requester_type"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Type of Request</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-10 uppercase font-medium">
-                                <SelectValue placeholder="Please select type." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value={RequestType.WITHIN_DIVISION}>
-                                WITHIN DIVISION
-                              </SelectItem>
-                              <SelectItem value={RequestType.OUTSIDE_DIVISION}>
-                                OUTSIDE DIVISION
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  {designation?.type !== "SDO" && (
+                    <FormField
+                      control={form.control}
+                      name="request_type"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Type of Request</FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-10 uppercase font-medium">
+                                  <SelectValue placeholder="Please select type." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value={RequestType.WITHIN_DIVISION}>
+                                  WITHIN DIVISION
+                                </SelectItem>
+                                <SelectItem
+                                  value={RequestType.OUTSIDE_DIVISION}
+                                >
+                                  OUTSIDE DIVISION
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="fund_source"

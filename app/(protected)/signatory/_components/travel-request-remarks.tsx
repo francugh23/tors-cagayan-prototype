@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { BadgeCheck, CircleHelp, TriangleAlert } from "lucide-react";
 import { useState } from "react";
@@ -20,7 +22,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -168,14 +169,13 @@ export function RemarksModal({
                     "hover:bg-primary/90 text-white w-full uppercase",
                     description.className
                   )}
-                  type="button" 
+                  type="button"
                   onClick={async () => {
-
                     const isValid = await form.trigger();
 
                     if (isValid) {
                       const formData = form.getValues();
-                      onSubmit(formData); 
+                      onSubmit(formData);
                     } else {
                       console.log("Form is not valid, cannot submit");
                     }

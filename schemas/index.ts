@@ -80,7 +80,7 @@ export const NewPasswordSchema = z.object({
 });
 
 export const TravelFormSchema = z.object({
-  requester_type: z.nativeEnum(RequestType, {
+  request_type: z.nativeEnum(RequestType, {
     message: "Request Type is required.",
   }),
   requester_name: z

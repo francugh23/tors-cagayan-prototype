@@ -275,7 +275,7 @@ export function EditUserDialog({
                     return (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">
-                          Division/Section/Unit
+                          Division/Section/Unit/School
                         </FormLabel>
 
                         <Popover open={open} onOpenChange={setOpen}>
@@ -301,7 +301,7 @@ export function EditUserDialog({
                           >
                             <Command>
                               <CommandInput placeholder="Search designation..." />
-                              <CommandList>
+                              <CommandList className="overflow-y-hidden">
                                 <CommandEmpty>
                                   No designations found.
                                 </CommandEmpty>

@@ -17,7 +17,7 @@ import { columns } from "./table/columns";
 import { DataTable } from "./table/data-table";
 
 const LogsPage = () => {
-  const { data, isLoading, isError, refetch } = useAdminActions();
+  const { data, isLoading, isError } = useAdminActions();
 
   return (
     <Card className="shadow-md w-full">
@@ -49,7 +49,6 @@ const LogsPage = () => {
             <DataTable
               data={data}
               columns={columns}
-              onUpdate={() => refetch()}
             />
           </>
         )}

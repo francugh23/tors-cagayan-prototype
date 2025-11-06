@@ -1,4 +1,5 @@
-import { fetchRecentActivityById } from "@/actions/dashboard-signatory";
+"use client";
+
 import {
   Card,
   CardHeader,
@@ -7,62 +8,33 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Activity, CheckCircle, Clock, FileText, XCircle } from "lucide-react";
-import { format } from "date-fns";
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import {
+  Activity,
+  BadgeCheck,
+  CircleAlert,
+  Loader,
+  OctagonX,
+} from "lucide-react";
+import { useSignatoryHistory } from "@/hooks/use-travel-orders";
+import { columns } from "../../signatory-history/table/columns";
+import { Separator } from "@/components/ui/separator";
+import { DataTable } from "../table/data-table";
 
-interface RecentActivityProps {
-  id: string;
-}
+const RecentActivity = () => {
+  const { data, isLoading, isError } = useSignatoryHistory();
 
-type RecentActivity = {
-  id: string;
-  code: string;
-  purpose: string;
-  destination: string;
-  isRecommendingApprovalSigned: boolean;
-  recommendingApprovalAt: Date | null;
-};
-
-const RecentActivity = ({ id }: RecentActivityProps) => {
-  const [data, setData] = useState<RecentActivity[]>([]);
-  const [state, setState] = useState<"loading" | "error" | "ready">("loading");
-
-  useEffect(() => {
-    async function fetchData() {
-      setState("loading");
-      try {
-        const res = await fetchRecentActivityById(id as string);
-        console.log(id, res);
-        setData(res ?? []);
-        setState("ready");
-      } catch (e) {
-        setState("error");
-        setData([]);
-      }
-    }
-    fetchData();
-  }, [id]);
-
-  const getActivityIcon = (isRecommendingApprovalSigned: boolean) => {
-    switch (isRecommendingApprovalSigned) {
-      case true:
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case false:
-        return <XCircle className="h-5 w-5 text-rose-500" />;
-    }
-  };
-
-  const getActivityDate = (item: RecentActivity) => {
-    if (item.recommendingApprovalAt) {
-      return format(
-        new Date(item.recommendingApprovalAt),
-        "MMM d, yyyy 'at' h:mm a"
-      );
-    }
-    return "Unknown date";
-  };
+  // const getActivityIcon = (recommending_status: string) => {
+  //   switch (recommending_status) {
+  //     case "Pending":
+  //       return <Loader className="h-6 w-6 text-yellow-500" />;
+  //     case "Disapproved":
+  //       return <OctagonX className="h-6 w-6 text-red-500" />;
+  //     case "Recommended":
+  //       return <BadgeCheck className="h-6 w-6 text-emerald-500" />;
+  //     case "Approved":
+  //       return <BadgeCheck className="h-6 w-6 text-emerald-500" />;
+  //   }
+  // };
 
   return (
     <>
@@ -79,66 +51,23 @@ const RecentActivity = ({ id }: RecentActivityProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          {state === "loading" && (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {isLoading && <Skeleton className="w-full h-[200px]" />}
 
-          {state === "ready" && data.length > 0 && (
-            <div className="space-y-6">
-              {data.map((item, index) => (
-                <div key={item.id} className="relative">
-                  {index !== data.length - 1 && (
-                    <div className="absolute left-5 top-10 bottom-0 w-px -translate-x-1/2 bg-border" />
-                  )}
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 rounded-full bg-muted p-2">
-                      {getActivityIcon(item.isRecommendingApprovalSigned)}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {item.isRecommendingApprovalSigned === true ? (
-                        <>
-                          <Badge
-                            className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 border font-semibold uppercase tracking-tight w-fit"
-                            variant="outline"
-                          >
-                            Approved
-                          </Badge>
-                        </>
-                      ) : (
-                        <Badge
-                          className="bg-rose-100 text-rose-800 hover:bg-rose-100 border-rose-200 border font-semibold uppercase tracking-tighter w-fit"
-                          variant="outline"
-                        >
-                          Denied
-                        </Badge>
-                      )}
-                      {item.purpose && (
-                        <p className="text-sm text-muted-foreground line-clamp-1">
-                          Purpose: {item.purpose}
-                        </p>
-                      )}
-                      {item.destination && (
-                        <p className="text-sm text-muted-foreground">
-                          Destination: {item.destination}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {getActivityDate(item)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {!isLoading && !isError && (
+            <>
+              <Separator />
+              <DataTable
+                data={data}
+                columns={columns}
+              />
+            </>
+          )}
+          {isError && (
+            <div className="flex flex-col items-center space-y-2 mt-2">
+              <CircleAlert size={50} className="text-red-600" />
+              <p className="text-center font-semibold">
+                Error loading data. Please try again later.
+              </p>
             </div>
           )}
         </CardContent>
