@@ -28,7 +28,7 @@ export const DEFAULT_LOGIN_REDIRECT = (role: string): string => {
   if (role === "ADMIN") {
     return "/users";
   } else if (role === "ACCOUNT_HOLDER") {
-    return "/client";
+    return "/home";
   } else if (role === "SIGNATORY") {
     return "/dashboard";
   } else if (role === "UNKNOWN"){

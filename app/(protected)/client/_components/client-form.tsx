@@ -44,6 +44,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useCreateTravelRequest } from "@/hooks/use-functions-travel-requests";
 import { useDesignationById } from "@/hooks/use-designations";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ClientFormProps {
   user?: any;
@@ -70,13 +71,16 @@ export function ClientForm({ user, label }: ClientFormProps) {
       destination: "",
       fund_source: "",
       attached_file: "",
+      is_schoolHead: false,
     },
   });
+
+  const isSchoolHead = form.watch("is_schoolHead");
 
   async function onSubmit(data: z.infer<typeof TravelFormSchema>) {
     startTransition(async () => {
       createTravelRequestMutation.mutate(data);
-    })
+    });
   }
 
   return (
@@ -168,6 +172,38 @@ export function ClientForm({ user, label }: ClientFormProps) {
                     </FormItem>
                   )}
                 />
+                {designation?.type !== "SDO" && (
+                  <FormField
+                    control={form.control}
+                    name="is_schoolHead"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) =>
+                                field.onChange(checked)
+                              }
+                              className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
+                            />
+                            <div className="grid gap-1.5 font-normal">
+                              <p className="text-sm leading-none font-medium">
+                                Is this request for a school head?
+                              </p>
+                              <p className="text-muted-foreground text-sm">
+                                Please tick the checkbox if yes, otherwise leave
+                                it unticked.
+                              </p>
+                            </div>
+                          </div>
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
               <div className="space-y-5">
                 <FormField
@@ -279,6 +315,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
+                              disabled={isSchoolHead}
                             >
                               <FormControl>
                                 <SelectTrigger className="h-10 uppercase font-medium">

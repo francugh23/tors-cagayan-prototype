@@ -24,7 +24,6 @@ import {
   Briefcase,
   Calendar,
   Loader,
-  FileStack,
   Globe,
   Info,
   MapPin,
@@ -32,6 +31,7 @@ import {
   PhilippinePeso,
   Navigation,
 } from "lucide-react";
+import { FilePreview } from "../../_components/attached-file-preview";
 
 interface ViewTravelOrderDialogProps {
   trigger: React.ReactNode;
@@ -256,7 +256,7 @@ export function ViewTravelOrderDialog({
             </Card>
           </div>
           <div className="grid col-span-1 md:col-span-2 gap-5">
-            <Card className="border-0 shadow-md overflow-hidden">
+            {/* <Card className="border-0 shadow-md overflow-hidden">
               <div className="bg-slate-200 p-4 border-b">
                 <h3
                   className={cn(
@@ -285,7 +285,11 @@ export function ViewTravelOrderDialog({
                   <p className="text-muted-foreground">No file attached.</p>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
+
+            <FilePreview
+              fileUrl={travelDetails.attached_file}
+            />
           </div>
         </div>
 
@@ -313,7 +317,7 @@ export function ViewTravelOrderDialog({
               <FaFileWord className="h-4 w-4" />
               {isPending
                 ? "Preparing Download..."
-                : "Download Authorized Travel"}
+                : "Download Travel Authority"}
             </Button>
           )}
         </DialogFooter>

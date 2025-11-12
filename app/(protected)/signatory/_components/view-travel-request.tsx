@@ -21,7 +21,6 @@ import {
   BadgeCheck,
   Briefcase,
   Calendar,
-  FileStack,
   Globe,
   InfoIcon,
   Loader,
@@ -34,6 +33,7 @@ import { RemarksModal } from "./travel-request-remarks";
 import { useUpdateTravelRequest } from "@/hooks/use-functions-travel-requests";
 import { ForwardModal } from "./forward-travel-request";
 import { PositionType } from "@prisma/client";
+import { FilePreview } from "../../_components/attached-file-preview";
 
 interface ViewTravelRequestProps {
   trigger: React.ReactNode;
@@ -59,8 +59,6 @@ export function ViewTravelRequestDialog({
   const isSchoolHead =
     travelDetails?.authority?.recommending_position?.type ===
     PositionType.SCHOOL_HEAD;
-
-  console.log(isSchoolHead);
 
   const updateTravelRequestMutation = useUpdateTravelRequest(() => {
     onUpdate();
@@ -277,34 +275,7 @@ export function ViewTravelRequestDialog({
             </Card>
           </div>
           <div className="grid col-span-1 md:col-span-2 gap-5">
-            <Card className="border-0 shadow-md overflow-hidden">
-              <div className="bg-slate-200 p-4 border-b">
-                <h3
-                  className={cn(
-                    "font-medium text-slate-700 flex items-center gap-2",
-                    title.className
-                  )}
-                >
-                  <FileStack className="h-4 w-4" />
-                  Attached File
-                </h3>
-              </div>
-              <CardContent className="p-4 space-y-2">
-                {travelDetails.attached_file ? (
-                  <iframe
-                    src={`https://drive.google.com/file/d/${
-                      travelDetails.attached_file
-                        .split("/d/")[1]
-                        .split("/view")[0]
-                    }/preview`}
-                    style={{ width: "100%", height: "500px", border: "none" }}
-                    title="Attached File"
-                  />
-                ) : (
-                  <p className="text-muted-foreground">No file attached.</p>
-                )}
-              </CardContent>
-            </Card>
+            <FilePreview fileUrl={travelDetails.attached_file} />
           </div>
         </div>
 

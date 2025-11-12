@@ -1,10 +1,11 @@
 "use client";
 
 import { useDashboardForSignatory } from "@/hooks/use-dashboard";
-import RecentActivity from "./_components/recent-activity";
+import RecentActions from "./_components/recent-actions";
 import SummaryCard from "./_components/summary-cards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CircleAlert } from "lucide-react";
+import PendingRequests from "./_components/oldest-requests";
 
 const SignatoryDashboard = () => {
   const { data, isLoading, isError } = useDashboardForSignatory();
@@ -23,14 +24,14 @@ const SignatoryDashboard = () => {
           <>
             <SummaryCard
               pendingTitle="Pending Requests"
-              approvedTitle="Approved Today"
-              deniedTitle="Denied Today"
-              pendingDescription={data?.pendingDescription ?? "No data"}
-              approvedDescription={data?.approvedDescription ?? "No data"}
-              deniedDescription={data?.deniedDescription ?? "No data"}
-              pendingValue={data?.pendingCount ?? 0}
-              approvedValue={data?.approvedToday ?? 0}
-              deniedValue={data?.deniedToday ?? 0}
+              approvedTitle="Approved"
+              deniedTitle="Disapproved"
+              pendingDescription={data?.trends?.pending?.text}
+              approvedDescription={data?.trends?.approved?.text}
+              deniedDescription={data?.trends?.disapproved?.text}
+              pendingValue={data?.stats?.pending_count ?? 0}
+              approvedValue={data?.stats?.approved_count ?? 0}
+              deniedValue={data?.stats?.denied_count ?? 0}
               pendingPage="/signatory"
               approvedPage="/signatory-history"
               deniedPage="/signatory-history"
@@ -47,7 +48,19 @@ const SignatoryDashboard = () => {
         )}
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <RecentActivity />
+        {isLoading && (
+          <>
+            <Skeleton className="col-span-4 h-[10rem]" />
+            <Skeleton className="col-span-3 h-[10rem]" />
+          </>
+        )}
+
+        {!isLoading && !isError && (
+          <>
+            <RecentActions data={data?.recentActions} />
+            <PendingRequests data={data?.oldestPending} link="/signatory" />
+          </>
+        )}
       </div>
     </div>
   );

@@ -28,13 +28,11 @@ import { ViewHistoryDialog } from "../_components/view-history";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onUpdate: () => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  onUpdate,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =

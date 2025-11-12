@@ -167,7 +167,7 @@ export async function GET() {
       oldestPending = await prisma.travelOrder.findMany({
         where: { ...baseWhere, approving_status: "Pending" },
         orderBy: { createdAt: "asc" },
-        take: 5,
+        take: 3,
         select: {
           id: true,
           code: true,
@@ -261,7 +261,7 @@ export async function GET() {
       oldestPending = await prisma.travelOrder.findMany({
         where: { ...baseWhere, recommending_status: "Pending" },
         orderBy: { createdAt: "asc" },
-        take: 5,
+        take: 3,
         select: {
           id: true,
           code: true,
@@ -404,24 +404,24 @@ export async function GET() {
     const recentActions = await prisma.actions.findMany({
       where: { user_id: userId },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 3,
       select: {
         id: true,
-        action: true,
+        code: true,
         remarks: true,
         createdAt: true,
         travelOrder: {
-          select: { id: true, requester: { select: { name: true } } },
+          select: { code: true, requester: { select: { name: true } } },
         },
       },
     });
 
     const formattedActions = recentActions.map((a) => ({
       id: a.id,
-      action: a.action,
+      code: a.code,
       remarks: a.remarks,
       timeAgo: timeAgoString(a.createdAt),
-      travelOrderId: a.travelOrder?.id ?? null,
+      travelOrderCode: a.travelOrder?.code ?? null,
       requesterName: a.travelOrder?.requester?.name ?? null,
     }));
 

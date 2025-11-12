@@ -16,26 +16,45 @@ export const createTravelOrder = async (
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const year = String(now.getFullYear()).slice(-2);
 
-    const randomLetters = Array.from({ length: 2 }, () =>
-      String.fromCharCode(Math.floor(Math.random() * 26) + 65)
-    ).join("");
+    const prefix = `TO-${month}${day}${year}-`;
 
-    const randomNumbers = String(Math.floor(Math.random() * 1000)).padStart(
-      3,
-      "0"
-    );
-
-    const code = `TO-${month}${day}${year}-${randomLetters}${randomNumbers}`;
-
-    const existingTravelOrderCode = await prisma.travelOrder.findUnique({
-      where: { code: code },
+    // Find the latest travel order for today (by code prefix)
+    const lastOrder = await prisma.travelOrder.findFirst({
+      where: {
+        code: {
+          startsWith: prefix,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    if (existingTravelOrderCode) {
+    // Determine next sequence number
+    let nextNumber = 1;
+
+    if (lastOrder) {
+      const lastCode = lastOrder.code;
+      const lastSeq = parseInt(lastCode.split("-")[2], 10);
+      if (!isNaN(lastSeq)) {
+        nextNumber = lastSeq + 1;
+      }
+    }
+
+    const formattedSeq = String(nextNumber).padStart(3, "0");
+    const newCode = `${prefix}${formattedSeq}`;
+
+    // Double-check to avoid duplicates (just in case)
+    const existing = await prisma.travelOrder.findUnique({
+      where: { code: newCode },
+    });
+
+    if (existing) {
+      // Recursive fallback if a collision happens (very unlikely)
       return generateCode();
     }
 
-    return code;
+    return newCode;
   };
 
   const validatedFields = TravelFormSchema.safeParse(values);
@@ -54,6 +73,7 @@ export const createTravelOrder = async (
     destination,
     fund_source,
     attached_file,
+    is_schoolHead,
   } = validatedFields.data;
 
   const formattedTravelPeriod = formatTravelPeriod(travel_period);
@@ -105,8 +125,8 @@ export const createTravelOrder = async (
     },
     select: {
       id: true,
-    }
-  })
+    },
+  });
 
   const ASDS_ELEM_OFFICES = ["OSDS", "CID", "FS-R", "FS-C", "PO", "AS"];
   const ASDS_SEC_OFFICES = ["SGOD", "ICTU", "AM", "LEG", "BUD"];
@@ -152,7 +172,7 @@ export const createTravelOrder = async (
   } else if (
     request_type === RequestType.WITHIN_DIVISION &&
     designation?.type === DesignationType.SECONDARY &&
-    designation?.code?.startsWith("3")
+    (designation?.code?.startsWith("3") || designation?.code?.startsWith("5"))
   ) {
     authority = await prisma.authority.findFirst({
       where: {
@@ -181,13 +201,45 @@ export const createTravelOrder = async (
   } else if (
     request_type === RequestType.OUTSIDE_DIVISION &&
     designation?.type === DesignationType.SECONDARY &&
-    designation?.code?.startsWith("3")
+    (designation?.code?.startsWith("3") || designation?.code?.startsWith("5"))
   ) {
     authority = await prisma.authority.findFirst({
       where: {
         recommending_position_id: school_head?.id,
         approving_position_id: sds?.id,
         request_type: RequestType.OUTSIDE_DIVISION,
+        designation_type: DesignationType.SECONDARY,
+      },
+    });
+
+    // ELEMENTARY SCHOOL HEADS
+  } else if (
+    is_schoolHead === true &&
+    request_type === RequestType.ANY &&
+    designation?.type === DesignationType.ELEMENTARY &&
+    designation?.code?.startsWith("1")
+  ) {
+    authority = await prisma.authority.findFirst({
+      where: {
+        recommending_position_id: asds_elem?.id,
+        approving_position_id: sds?.id,
+        request_type: RequestType.ANY,
+        designation_type: DesignationType.ELEMENTARY,
+      },
+    });
+
+    // SECONDARY SCHOOL HEADS
+  } else if (
+    is_schoolHead === true &&
+    request_type === RequestType.ANY &&
+    designation?.type === DesignationType.SECONDARY &&
+    (designation?.code?.startsWith("3") || designation?.code?.startsWith("5"))
+  ) {
+    authority = await prisma.authority.findFirst({
+      where: {
+        recommending_position_id: asds_sec?.id,
+        approving_position_id: sds?.id,
+        request_type: RequestType.ANY,
         designation_type: DesignationType.SECONDARY,
       },
     });
@@ -223,9 +275,9 @@ export const createTravelOrder = async (
 
     await prisma.actions.create({
       data: {
-        code: `REQUESTED-${travel_order.code}`,
+        code: `REQUEST`,
         travel_order_id: travel_order.id,
-        action: "Requested a travel order.",
+        action: `${user?.user?.name} requested a travel order.`,
         user_id: user?.user?.id as string,
         createdAt: new Date(),
       },
@@ -340,6 +392,7 @@ export const updateTravelRequestById = async (data: {
       },
       select: {
         position_id: true,
+        name: true,
       },
     });
 
@@ -394,6 +447,7 @@ export const updateTravelRequestById = async (data: {
       await prisma.travelOrder.update({
         where: { id: data.id },
         data: {
+          code: `${travelOrder.code}-R`,
           recommending_status: "Approved",
           updatedAt: new Date(),
         },
@@ -411,6 +465,7 @@ export const updateTravelRequestById = async (data: {
       await prisma.travelOrder.update({
         where: { id: data.id },
         data: {
+          code: `${travelOrder.code}A`,
           recommending_status: "Approved",
           approving_status: "Approved",
           updatedAt: new Date(),
@@ -420,12 +475,10 @@ export const updateTravelRequestById = async (data: {
 
     await prisma.actions.create({
       data: {
-        code: `${isRecommending ? "RECOMMENDED" : "APPROVED"}-${
-          travelOrder.code
-        }`,
+        code: `${isRecommending ? "RECOMMENDED" : "APPROVED"}`,
         travel_order_id: data.id,
-        action: `${
-          isRecommending ? "Recommended" : "Approved"
+        action: `${user?.name} ${
+          isRecommending ? "recommended" : "approved"
         } a travel order request.`,
         user_id: data.userId,
         createdAt: new Date(),
@@ -452,7 +505,12 @@ export const forwardTravelRequestById = async (data: {
     const travelOrder = await prisma.travelOrder.findUnique({
       where: { id: data.id },
       include: {
-        authority: true,
+        authority: {
+          include: {
+            recommending_position: true,
+            approving_position: true,
+          },
+        },
       },
     });
 
@@ -501,9 +559,10 @@ export const forwardTravelRequestById = async (data: {
     // 6️⃣ Log the forwarding action
     await prisma.actions.create({
       data: {
-        code: `FWD-${travelOrder.code}`,
+        code: `FORWARDED`,
         user_id: data.userId,
-        action: `Forwarded travel request to another ASDS authority.`,
+        travel_order_id: data.id,
+        action: `${user?.name} forwarded a travel request to another ASDS authority.`,
       },
     });
 
@@ -533,7 +592,7 @@ export const denyTravelRequestOrderById = async (
     // Get user's position
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { position_id: true },
+      select: { position_id: true, name: true },
     });
 
     if (!user?.position_id) {
@@ -543,7 +602,14 @@ export const denyTravelRequestOrderById = async (
     // Get travel order and its authority
     const travelOrder = await prisma.travelOrder.findUnique({
       where: { id: id },
-      include: { authority: true },
+      include: {
+        authority: {
+          include: {
+            recommending_position: true,
+            approving_position: true,
+          },
+        },
+      },
     });
 
     if (!travelOrder) {
@@ -579,6 +645,7 @@ export const denyTravelRequestOrderById = async (
       await prisma.travelOrder.update({
         where: { id: id },
         data: {
+          code: `${travelOrder.code}D`,
           recommending_status: "Disapproved",
           updatedAt: new Date(),
         },
@@ -597,6 +664,7 @@ export const denyTravelRequestOrderById = async (
       await prisma.travelOrder.update({
         where: { id: id },
         data: {
+          code: `${travelOrder.code}D`,
           approving_status: "Disapproved",
           updatedAt: new Date(),
         },
@@ -606,13 +674,9 @@ export const denyTravelRequestOrderById = async (
     // Create action record
     await prisma.actions.create({
       data: {
-        code: `DENIED-${travelOrder.code}`,
+        code: `DISAPPROVED`,
         travel_order_id: id,
-        action: `${
-          isRecommending
-            ? "Recommending Authority disapproved"
-            : "Approving Authority disapproved"
-        } a travel order request.`,
+        action: `${user?.name} disapproved a travel order request.`,
         remarks: remarks,
         user_id: userId,
         createdAt: new Date(),

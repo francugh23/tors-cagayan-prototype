@@ -17,7 +17,7 @@ import { useSignatoryHistory } from "@/hooks/use-travel-orders";
 import { CircleAlert } from "lucide-react";
 
 const SignatoryHistoryPage = () => {
-  const { data, isLoading, isError, refetch } = useSignatoryHistory();
+  const { data, isLoading, isError } = useSignatoryHistory();
 
   console.log(data)
 
@@ -51,7 +51,6 @@ const SignatoryHistoryPage = () => {
             <DataTable
               data={data}
               columns={columns}
-              onUpdate={() => refetch()}
             />
           </>
         )}

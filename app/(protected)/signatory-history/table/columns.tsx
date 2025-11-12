@@ -17,11 +17,11 @@ export type ActionsHistory = {
   }
 };
 
-export const columns: ColumnDef<ActionsHistory>[] = [
+export const columns: ColumnDef<any>[] = [
   {
     accessorKey: "code",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Code" />
+      <DataTableColumnHeader column={column} title="Action" />
     ),
     cell: ({ row }) => {
       return <div className="font-medium">{row.getValue("code")}</div>;
@@ -29,32 +29,32 @@ export const columns: ColumnDef<ActionsHistory>[] = [
   },
   {
     id: "requester_name",
-    accessorFn: (row) => row.travelOrder.requester_name,
+    accessorFn: (row) => row.travelOrder?.requester_name,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Requester Name" />
     ),
     cell: ({ row }) => (
       <div className="font-medium uppercase">
-        {row.original.travelOrder.requester_name}
+        {row.original.travelOrder?.requester_name}
       </div>
     ),
   },
   {
     id: "purpose",
-    accessorFn: (row) => row.travelOrder.purpose,
+    accessorFn: (row) => row.travelOrder?.purpose,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Purpose" />
     ),
     cell: ({ row }) => (
       <div className="font-medium uppercase">
-        {row.original.travelOrder.purpose}
+        {row.original.travelOrder?.purpose}
       </div>
     ),
   },
   {
     accessorKey: "action",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Action" />
+      <DataTableColumnHeader column={column} title="Description" />
     ),
     cell: ({ row }) => <div>{row.getValue("action")}</div>,
   },

@@ -117,7 +117,7 @@ export const LoginForm = () => {
                     <Input
                       {...field}
                       type="email"
-                      placeholder="your_account@dev.gov.ph"
+                      placeholder="example@dev.gov.ph"
                       disabled={isPending}
                       autoComplete="off"
                     />

@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { FaHotel, FaUsers } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { title, description } from "@/components/fonts/font";
@@ -19,7 +18,6 @@ import {
   BadgeCheck,
   Briefcase,
   Calendar,
-  FileStack,
   Globe,
   InfoIcon,
   Loader,
@@ -28,6 +26,7 @@ import {
   OctagonX,
   PhilippinePeso,
 } from "lucide-react";
+import { FilePreview } from "../../_components/attached-file-preview";
 
 interface ViewHistoryDialogProps {
   trigger: React.ReactNode;
@@ -38,7 +37,6 @@ export function ViewHistoryDialog({
   trigger,
   travelDetails,
 }: ViewHistoryDialogProps) {
-
   const [open, setOpen] = useState(false);
 
   return (
@@ -65,7 +63,7 @@ export function ViewHistoryDialog({
                 variant="outline"
                 className="text-black border-black border-2 px-3 py-1 mx-2 font-extrabold text-2xl font-mono rounded-full"
               >
-                {travelDetails.code}
+                {travelDetails.travelOrder.code}
               </Badge>
             </div>
             <DialogDescription
@@ -102,7 +100,7 @@ export function ViewHistoryDialog({
                         Requester
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.travelOrder.requester_name}
+                        {travelDetails.travelOrder?.requester_name}
                       </p>
                     </div>
                     <div>
@@ -111,7 +109,7 @@ export function ViewHistoryDialog({
                         Travel Period
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.travelOrder.travel_period}
+                        {travelDetails.travelOrder?.travel_period}
                       </p>
                     </div>
                   </div>
@@ -124,7 +122,7 @@ export function ViewHistoryDialog({
                         Purpose
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.travelOrder.purpose}
+                        {travelDetails.travelOrder?.purpose}
                       </p>
                     </div>
                     <div>
@@ -133,7 +131,7 @@ export function ViewHistoryDialog({
                         Destination
                       </p>
                       <p className="text-slate-700 font-medium uppercase">
-                        {travelDetails.travelOrder.destination}
+                        {travelDetails.travelOrder?.destination}
                       </p>
                     </div>
                   </div>
@@ -159,7 +157,7 @@ export function ViewHistoryDialog({
                     Host of Activity
                   </p>
                   <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.travelOrder.host}
+                    {travelDetails.travelOrder?.host}
                   </p>
                 </div>
                 <div>
@@ -168,7 +166,7 @@ export function ViewHistoryDialog({
                     Fund Source
                   </p>
                   <p className="text-slate-700 font-medium uppercase">
-                    {travelDetails.travelOrder.fund_source}
+                    {travelDetails.travelOrder?.fund_source}
                   </p>
                 </div>
               </CardContent>
@@ -189,12 +187,13 @@ export function ViewHistoryDialog({
               </div>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  {travelDetails.travelOrder.recommending_status ===
+                  {travelDetails.travelOrder?.recommending_status ===
                   "Approved" ? (
                     <div className="p-2 rounded-full bg-emerald-100">
                       <BadgeCheck className="h-6 w-6 text-emerald-500" />
                     </div>
-                  ) : travelDetails.recommending_status === "Disapproved" ? (
+                  ) : travelDetails.travelOrder?.recommending_status ===
+                    "Disapproved" ? (
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
                     </div>
@@ -207,10 +206,10 @@ export function ViewHistoryDialog({
                   <div>
                     <p className="font-medium">Recommending Authority</p>
                     <p className="text-sm text-slate-500">
-                      {travelDetails.travelOrder.recommending_status ===
+                      {travelDetails.travelOrder?.recommending_status ===
                       "Approved"
                         ? "Approved"
-                        : travelDetails.travelOrder.recommending_status ===
+                        : travelDetails.travelOrder?.recommending_status ===
                           "Disapproved"
                         ? "Disapproved"
                         : "Pending"}
@@ -218,11 +217,12 @@ export function ViewHistoryDialog({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {travelDetails.travelOrder.approving_status === "Approved" ? (
+                  {travelDetails.travelOrder?.approving_status ===
+                  "Approved" ? (
                     <div className="p-2 rounded-full bg-emerald-100">
                       <BadgeCheck className="h-6 w-6 text-emerald-500" />
                     </div>
-                  ) : travelDetails.travelOrder.approving_status ===
+                  ) : travelDetails.travelOrder?.approving_status ===
                     "Disapproved" ? (
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
@@ -236,9 +236,10 @@ export function ViewHistoryDialog({
                   <div>
                     <p className="font-medium">Approving Authority</p>
                     <p className="text-sm text-slate-500">
-                      {travelDetails.travelOrder.approving_status === "Approved"
+                      {travelDetails.travelOrder?.approving_status ===
+                      "Approved"
                         ? "Approved"
-                        : travelDetails.travelOrder.approving_status ===
+                        : travelDetails.travelOrder?.approving_status ===
                           "Disapproved"
                         ? "Disapproved"
                         : "Pending"}
@@ -249,34 +250,7 @@ export function ViewHistoryDialog({
             </Card>
           </div>
           <div className="grid col-span-1 md:col-span-2 gap-5">
-            <Card className="border-0 shadow-md overflow-hidden">
-              <div className="bg-slate-200 p-4 border-b">
-                <h3
-                  className={cn(
-                    "font-medium text-slate-700 flex items-center gap-2",
-                    title.className
-                  )}
-                >
-                  <FileStack className="h-4 w-4" />
-                  Attached File
-                </h3>
-              </div>
-              <CardContent className="p-4 space-y-2">
-                {travelDetails.travelOrder.attached_file ? (
-                  <iframe
-                    src={`https://drive.google.com/file/d/${
-                      travelDetails.travelOrder.attached_file
-                        .split("/d/")[1]
-                        .split("/view")[0]
-                    }/preview`}
-                    style={{ width: "100%", height: "500px", border: "none" }}
-                    title="Attached File"
-                  />
-                ) : (
-                  <p className="text-muted-foreground">No file attached.</p>
-                )}
-              </CardContent>
-            </Card>
+            <FilePreview fileUrl={travelDetails.travelOrder?.attached_file} />
           </div>
         </div>
       </DialogContent>

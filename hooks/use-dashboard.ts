@@ -14,5 +14,6 @@ export function useDashboardForSignatory() {
     queryKey: ["dashboard-signatory"],
     queryFn: getDashboardForSignatory,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 5000,
   })
 }

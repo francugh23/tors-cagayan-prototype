@@ -94,6 +94,7 @@ export const TravelFormSchema = z.object({
   fund_source: z.string().min(1, { message: "Fund Source is required." }),
   // attached_file: z.instanceof(File, { message: "Attachment is required." }),
   attached_file: z.string().min(1, { message: "Attachment file link is required."}),
+  is_schoolHead: z.boolean().optional(),
 });
 
 export const TravelFormSchemaSaveToDB = z.object({
