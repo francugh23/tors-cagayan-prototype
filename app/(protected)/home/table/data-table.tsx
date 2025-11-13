@@ -28,7 +28,7 @@ import { ViewTravelOrderDialog } from "../_components/view-travel-order";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];  
   data: TData[];
-  onUpdate?: () => void;
+  onUpdate: () => void;
 }
 
 export function DataTable<TData, TValue>({

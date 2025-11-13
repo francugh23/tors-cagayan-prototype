@@ -6,6 +6,8 @@ import SummaryCard from "./_components/summary-cards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CircleAlert } from "lucide-react";
 import PendingRequests from "./_components/oldest-requests";
+import Analytics from "./_components/analytics";
+import { Card, CardContent } from "@/components/ui/card";
 
 const SignatoryDashboard = () => {
   const { data, isLoading, isError } = useDashboardForSignatory();
@@ -31,7 +33,7 @@ const SignatoryDashboard = () => {
               deniedDescription={data?.trends?.disapproved?.text}
               pendingValue={data?.stats?.pending_count ?? 0}
               approvedValue={data?.stats?.approved_count ?? 0}
-              deniedValue={data?.stats?.denied_count ?? 0}
+              deniedValue={data?.stats?.disapproved_count ?? 0}
               pendingPage="/signatory"
               approvedPage="/signatory-history"
               deniedPage="/signatory-history"
@@ -39,12 +41,16 @@ const SignatoryDashboard = () => {
           </>
         )}
         {isError && (
-          <div className="flex flex-col items-center space-y-2 mt-2">
-            <CircleAlert size={50} className="text-red-600" />
-            <p className="text-center font-semibold">
-              Error loading data. Please try again later.
-            </p>
-          </div>
+          <Card className="col-span-7">
+            <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+              <div className="flex flex-col items-center space-y-2 mt-2">
+                <CircleAlert size={50} className="text-red-600" />
+                <p className="text-center font-semibold">
+                  Error loading data. Please try again later.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -52,13 +58,19 @@ const SignatoryDashboard = () => {
           <>
             <Skeleton className="col-span-4 h-[10rem]" />
             <Skeleton className="col-span-3 h-[10rem]" />
+            <Skeleton className="col-span-7 h-[10rem]" />
           </>
         )}
 
         {!isLoading && !isError && (
           <>
             <RecentActions data={data?.recentActions} />
-            <PendingRequests data={data?.oldestPending} link="/signatory" />
+            <PendingRequests
+              data={data?.oldestPending}
+              link="/signatory"
+              pendingLastHour={data?.trends?.newPendingLast2Hours}
+            />
+            <Analytics />
           </>
         )}
       </div>

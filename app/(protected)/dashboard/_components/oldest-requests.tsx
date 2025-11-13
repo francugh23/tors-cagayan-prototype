@@ -1,23 +1,25 @@
 "use client";
 
-import { AlertCircle, CircleAlert, Clock } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface Pending {
   id: string;
   code: string;
   requester_name: string;
   recommending_status: string;
+  approving_status: string;
   createdAt: string;
   requester: {
     designation: {
@@ -30,11 +32,12 @@ interface Pending {
 interface PendingCardProps {
   data: Pending[] | undefined;
   link: string;
+  pendingLastHour: number;
 }
 
-const PendingRequests = ({ link, data }: PendingCardProps) => {
+const PendingRequests = ({ data, link, pendingLastHour }: PendingCardProps) => {
   return (
-    <Card className="col-span-3">
+    <Card className="col-span-3 max-h-fit">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -72,25 +75,47 @@ const PendingRequests = ({ link, data }: PendingCardProps) => {
                 <div className="flex items-center justify-between">
                   <div className="flex  items-center gap-2">
                     <Badge className="uppercase bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200 border">
-                      {item.recommending_status}
+                      {item.recommending_status || item.approving_status}
                     </Badge>
                     <p className="text-xs text-muted-foreground font-semibold">
                       {item.requester.designation.name}
                     </p>
                   </div>
-                  <Button size={"sm"} variant={"ghost"} className="text-xs font-semibold">
-                    Review
-                  </Button>
                 </div>
               </div>
             ))
           ) : (
             <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">No pending items</p>
+              <p className="text-sm text-muted-foreground">No pending items.</p>
             </div>
           )}
         </div>
       </CardContent>
+      <CardFooter>
+        <Link href={link} className="w-full relative inline-block">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="relative text-xs font-semibold w-full flex items-center justify-center"
+          >
+            Recent Requests
+            {pendingLastHour > 0 && (
+              <span
+                className="
+              absolute -top-2 -right-2
+              bg-red-600 text-white text-[10px] font-bold
+              px-1.5 py-0.5 rounded-full
+              flex items-center justify-center
+              min-w-[18px] h-[18px]
+              shadow-sm
+            "
+              >
+                {pendingLastHour}
+              </span>
+            )}
+          </Button>
+        </Link>
+      </CardFooter>
     </Card>
   );
 };

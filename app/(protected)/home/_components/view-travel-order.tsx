@@ -30,19 +30,24 @@ import {
   OctagonX,
   PhilippinePeso,
   Navigation,
+  Ban,
 } from "lucide-react";
 import { FilePreview } from "../../_components/attached-file-preview";
+import { CancelRemarksModal } from "./cancel-request";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface ViewTravelOrderDialogProps {
   trigger: React.ReactNode;
   travelDetails: TravelRequest;
-  onUpdate?: () => void;
+  onUpdate: () => void;
 }
 
 export function ViewTravelOrderDialog({
   trigger,
   travelDetails,
+  onUpdate,
 }: ViewTravelOrderDialogProps) {
+  const user = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -209,9 +214,13 @@ export function ViewTravelOrderDialog({
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
                     </div>
-                  ) : (
+                  ) : travelDetails.recommending_status === "Cancelled" ? (
                     <div className="p-2 rounded-full bg-yellow-100">
-                      <Loader className="h-6 w-6 text-yellow-500" />
+                      <Ban className="h-6 w-6 text-yellow-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-full bg-orange-100">
+                      <Loader className="h-6 w-6 text-orange-500" />
                     </div>
                   )}
 
@@ -222,6 +231,8 @@ export function ViewTravelOrderDialog({
                         ? "Approved"
                         : travelDetails.recommending_status === "Disapproved"
                         ? "Disapproved"
+                        : travelDetails.recommending_status === "Cancelled"
+                        ? "This travel request was cancelled."
                         : "Pending"}
                     </p>
                   </div>
@@ -235,9 +246,13 @@ export function ViewTravelOrderDialog({
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
                     </div>
-                  ) : (
+                  ) : travelDetails.approving_status === "Cancelled" ? (
                     <div className="p-2 rounded-full bg-yellow-100">
-                      <Loader className="h-6 w-6 text-yellow-500" />
+                      <Ban className="h-6 w-6 text-yellow-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-full bg-orange-100">
+                      <Loader className="h-6 w-6 text-orange-500" />
                     </div>
                   )}
 
@@ -248,6 +263,8 @@ export function ViewTravelOrderDialog({
                         ? "Approved"
                         : travelDetails.approving_status === "Disapproved"
                         ? "Disapproved"
+                        : travelDetails.approving_status === "Cancelled"
+                        ? "This travel request was cancelled."
                         : "Pending"}
                     </p>
                   </div>
@@ -287,24 +304,51 @@ export function ViewTravelOrderDialog({
               </CardContent>
             </Card> */}
 
-            <FilePreview
-              fileUrl={travelDetails.attached_file}
-            />
+            <FilePreview fileUrl={travelDetails.attached_file} />
           </div>
         </div>
 
         <DialogFooter className="bg-slate-50 p-6 rounded-b-lg border-t">
-          {travelDetails.recommending_status !== "Approved" ||
-          travelDetails.approving_status !== "Approved" ? (
+          {travelDetails.recommending_status === "Cancelled" ||
+          travelDetails.approving_status === "Cancelled" ? (
             <Badge
-              variant="destructive"
+              variant="outline"
               className={cn(
-                "items-center w-fit px-2 py-1 text-sm",
+                "items-center w-fit px-2 py-1 text-xs text-justify bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200 border font-semibold tracking-tighter",
                 description.className
               )}
             >
-              <div>Note: This travel order is not yet approved.</div>
+              Note: This travel request was cancelled.
             </Badge>
+          ) : travelDetails.recommending_status === "Disapproved" ||
+            travelDetails.approving_status === "Disapproved" ? (
+            <Badge
+              variant="outline"
+              className={cn(
+                "items-center w-fit px-2 py-1 text-xs text-justify  bg-red-100 text-red-800 hover:bg-red-100 border-red-200 border font-semibold tracking-tighter",
+                description.className
+              )}
+            >
+              Note: This travel request was disapproved by the authorities.
+            </Badge>
+          ) : travelDetails.recommending_status !== "Approved" ||
+            travelDetails.approving_status !== "Approved" ? (
+            <div className="w-full flex justify-between items-center gap-2">
+              <CancelRemarksModal
+                user={user}
+                travelDetails={travelDetails}
+                onUpdate={onUpdate}
+              />
+              <Badge
+                variant="destructive"
+                className={cn(
+                  "items-center w-fit px-2 py-1 text-xs text-justify bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border font-semibold tracking-tighter",
+                  description.className
+                )}
+              >
+                Note: This travel order is being processed.
+              </Badge>
+            </div>
           ) : (
             <Button
               className={cn(
@@ -313,6 +357,7 @@ export function ViewTravelOrderDialog({
               )}
               onClick={handleDownload}
               disabled={isPending}
+              size={"sm"}
             >
               <FaFileWord className="h-4 w-4" />
               {isPending

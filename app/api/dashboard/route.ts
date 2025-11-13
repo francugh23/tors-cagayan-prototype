@@ -167,7 +167,7 @@ export async function GET() {
       oldestPending = await prisma.travelOrder.findMany({
         where: { ...baseWhere, approving_status: "Pending" },
         orderBy: { createdAt: "asc" },
-        take: 3,
+        take: 5,
         select: {
           id: true,
           code: true,
@@ -404,7 +404,7 @@ export async function GET() {
     const recentActions = await prisma.actions.findMany({
       where: { user_id: userId },
       orderBy: { createdAt: "desc" },
-      take: 3,
+      take: 5,
       select: {
         id: true,
         code: true,

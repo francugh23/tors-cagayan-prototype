@@ -14,7 +14,7 @@ import {
 import { title, description } from "@/components/fonts/font";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { denyTravelRequestOrderById } from "@/actions/travel-order";
+import { cancelTravelRequestOrderById } from "@/actions/travel-order";
 import { toast } from "sonner";
 
 import {
@@ -29,17 +29,17 @@ import { RemarksSchema } from "@/schemas";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-interface RemarksModalProps {
+interface CancelRemarksModalProps {
   user: any;
   travelDetails: any;
   onUpdate: () => void;
 }
 
-export function RemarksModal({
+export function CancelRemarksModal({
   user,
   travelDetails,
   onUpdate,
-}: RemarksModalProps) {
+}: CancelRemarksModalProps) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<z.infer<typeof RemarksSchema>>({
@@ -53,7 +53,7 @@ export function RemarksModal({
 
   async function onSubmit(data: z.infer<typeof RemarksSchema>) {
     try {
-      const result = await denyTravelRequestOrderById(data);
+      const result = await cancelTravelRequestOrderById(data);
 
       if (result?.error) {
         toast("Oops", {
@@ -63,7 +63,7 @@ export function RemarksModal({
         });
       } else {
         toast("Success", {
-          description: result?.success || "Travel order denied!",
+          description: result?.success || "Travel order cancelled!",
           duration: 5000,
           icon: <BadgeCheck className="text-green-500" size={20} />,
         });
@@ -84,14 +84,14 @@ export function RemarksModal({
       {/* Trigger button */}
       <DialogTrigger asChild>
         <Button
-          variant={"outline"}
+          size={"sm"}
           className={cn(
-            "hover:bg-secondary/90 text-gray-600 w-full uppercase",
+            "hover:bg-primary/90 text-white uppercase text-xs",
             description.className
           )}
           type="button"
         >
-          Disapprove
+          Cancel Travel Request
         </Button>
       </DialogTrigger>
 
@@ -114,7 +114,7 @@ export function RemarksModal({
                 description.className
               )}
             >
-              Please input a remark for denying this travel order request.
+              Please input a remark for cancelling this travel order request.
             </DialogHeader>
             <FormField
               control={form.control}
@@ -136,7 +136,7 @@ export function RemarksModal({
                       className="h-10"
                       {...field}
                       autoComplete="off"
-                      placeholder="Your reason for denying this request."
+                      placeholder="Your reason for cancelling this request."
                     />
                   </FormControl>
                   <FormMessage />

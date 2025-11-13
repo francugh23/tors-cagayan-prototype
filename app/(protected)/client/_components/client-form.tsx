@@ -24,7 +24,7 @@ import {
 import { useForm } from "react-hook-form";
 import NonFormInput from "../../../../components/custom/nonform-input";
 
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { TravelFormSchema } from "@/schemas";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,6 +76,12 @@ export function ClientForm({ user, label }: ClientFormProps) {
   });
 
   const isSchoolHead = form.watch("is_schoolHead");
+
+  useEffect(() => {
+    if (isSchoolHead) {
+      form.setValue("request_type", RequestType.ANY);
+    }
+  }, [isSchoolHead, form]);
 
   async function onSubmit(data: z.infer<typeof TravelFormSchema>) {
     startTransition(async () => {

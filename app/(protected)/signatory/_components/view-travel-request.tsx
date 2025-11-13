@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   BadgeCheck,
+  Ban,
   Briefcase,
   Calendar,
   Globe,
@@ -228,9 +229,13 @@ export function ViewTravelRequestDialog({
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
                     </div>
-                  ) : (
+                  ) : travelDetails.recommending_status === "Cancelled" ? (
                     <div className="p-2 rounded-full bg-yellow-100">
-                      <Loader className="h-6 w-6 text-yellow-500" />
+                      <Ban className="h-6 w-6 text-yellow-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-full bg-orange-100">
+                      <Loader className="h-6 w-6 text-orange-500" />
                     </div>
                   )}
 
@@ -241,6 +246,8 @@ export function ViewTravelRequestDialog({
                         ? "Approved"
                         : travelDetails.recommending_status === "Disapproved"
                         ? "Disapproved"
+                        : travelDetails.recommending_status === "Cancelled"
+                        ? "This travel request was cancelled."
                         : "Pending"}
                     </p>
                   </div>
@@ -254,9 +261,13 @@ export function ViewTravelRequestDialog({
                     <div className="p-2 rounded-full bg-red-100">
                       <OctagonX className="h-6 w-6 text-red-500" />
                     </div>
-                  ) : (
+                  ) : travelDetails.approving_status === "Cancelled" ? (
                     <div className="p-2 rounded-full bg-yellow-100">
-                      <Loader className="h-6 w-6 text-yellow-500" />
+                      <Ban className="h-6 w-6 text-yellow-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-full bg-orange-100">
+                      <Loader className="h-6 w-6 text-orange-500" />
                     </div>
                   )}
 
@@ -267,6 +278,8 @@ export function ViewTravelRequestDialog({
                         ? "Approved"
                         : travelDetails.approving_status === "Disapproved"
                         ? "Disapproved"
+                        : travelDetails.approving_status === "Cancelled"
+                        ? "This travel request was cancelled."
                         : "Pending"}
                     </p>
                   </div>

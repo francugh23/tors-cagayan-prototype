@@ -289,96 +289,6 @@ export const createTravelOrder = async (
   }
 };
 
-export async function fetchTravelOrdersById() {
-  const user = await getCurrentUser();
-
-  try {
-    await prisma.$connect;
-
-    const res = await prisma.travelOrder.findMany({
-      where: {
-        requester_id: user?.uid,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return res;
-  } catch {
-    return [];
-  } finally {
-    await prisma.$disconnect;
-  }
-}
-
-export async function fetchTravelOrdersForSignatory() {
-  const user = await getCurrentUser();
-  try {
-    await prisma.$connect;
-
-    // Check if this position is for recommending
-    const isRecommending = await prisma.authority.count({
-      where: { recommending_position_id: user?.user?.position_id },
-    });
-
-    if (isRecommending > 0) {
-      // CASE 1: Recommending signatory - show pending recommendations
-      const res = await prisma.travelOrder.findMany({
-        where: {
-          authority: { recommending_position_id: user?.user?.position_id },
-          recommending_status: "Pending",
-        },
-        include: {
-          requester: true,
-          authority: {
-            include: {
-              recommending_position: true,
-              approving_position: true,
-            },
-          },
-          actions: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-      return res;
-    }
-
-    // CASE 2: Approving signatory - show pending approvals (after recommendation approved)
-    const res = await prisma.travelOrder.findMany({
-      where: {
-        authority: {
-          approving_position_id: user?.user?.position_id as string,
-        },
-        recommending_status: "Approved",
-        approving_status: "Pending",
-      },
-      include: {
-        requester: true,
-        authority: {
-          include: {
-            recommending_position: true,
-            approving_position: true,
-          },
-        },
-        actions: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return res;
-  } catch (error) {
-    console.error("Error fetching travel orders for signatory:", error);
-    return [];
-  } finally {
-    await prisma.$disconnect;
-  }
-}
-
 export const updateTravelRequestById = async (data: {
   id: string;
   userId: string;
@@ -645,8 +555,9 @@ export const denyTravelRequestOrderById = async (
       await prisma.travelOrder.update({
         where: { id: id },
         data: {
-          code: `${travelOrder.code}D`,
+          code: `${travelOrder.code}-D`,
           recommending_status: "Disapproved",
+          approving_status: "Disapproved",
           updatedAt: new Date(),
         },
       });
@@ -692,22 +603,68 @@ export const denyTravelRequestOrderById = async (
   }
 };
 
-export const fetchParticipantByTravelUserId = async (userId: string) => {
+export const cancelTravelRequestOrderById = async (
+  values: z.infer<typeof RemarksSchema>
+) => {
   try {
     await prisma.$connect();
 
-    const data = await prisma.user.findFirst({
-      where: {
-        id: userId,
-      },
-      select: {
-        name: true,
+    const validatedFields = RemarksSchema.safeParse(values);
+
+    if (!validatedFields.success) {
+      return { error: "Invalid fields!" };
+    }
+
+    const { travelOrderId: id, userId, remarks } = validatedFields.data;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true },
+    });
+
+    // Get travel order and its authority
+    const travelOrder = await prisma.travelOrder.findUnique({
+      where: { id: id },
+      include: {
+        authority: {
+          include: {
+            recommending_position: true,
+            approving_position: true,
+          },
+        },
       },
     });
 
-    return data;
-  } catch {
-    return null;
+    if (!travelOrder) {
+      return { error: "Travel request not found!" };
+    }
+
+    await prisma.travelOrder.update({
+      where: { id: id },
+      data: {
+        code: `${travelOrder.code}-C`,
+        recommending_status: "Cancelled",
+        approving_status: "Cancelled",
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create action record
+    await prisma.actions.create({
+      data: {
+        code: `CANCELLED`,
+        travel_order_id: id,
+        action: `${user?.name} cancelled a travel order request.`,
+        remarks: remarks,
+        user_id: userId,
+        createdAt: new Date(),
+      },
+    });
+
+    return { success: "Travel order request cancelled!" };
+  } catch (error) {
+    console.error("Cancellation error:", error);
+    return { error: "Failed to cancel travel order request!", details: error };
   } finally {
     await prisma.$disconnect();
   }

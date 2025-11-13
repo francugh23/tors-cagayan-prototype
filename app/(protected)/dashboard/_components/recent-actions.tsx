@@ -8,17 +8,10 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Activity,
-  BadgeCheck,
-  CircleAlert,
-  OctagonX,
-  Forward,
-  Route,
   Clock,
 } from "lucide-react";
-import { useSignatoryHistory } from "@/hooks/use-travel-orders";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,7 +42,7 @@ const codeClassMap: Record<string, string> = {
 
 const RecentActions = ({ data }: RecentActionProps) => {
   return (
-    <Card className="col-span-4">
+    <Card className="col-span-4 max-h-fit">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -69,15 +62,16 @@ const RecentActions = ({ data }: RecentActionProps) => {
             data.map((action) => (
               <div
                 key={action.id}
-                className="flex items-center justify-between gap-4 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                className={`flex items-center justify-between gap-4 p-3 rounded-lg border hover:bg-accent/50 transition-colors ${
+                  codeClassMap[action.code] ||
+                  "bg-gray-100 text-gray-800 border-gray-200 border"
+                }`}
               >
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <Badge
-                      className={`w-fit text-xs ${
-                        codeClassMap[action.code] ||
-                        "bg-gray-100 text-gray-800 border-gray-200 border"
-                      }`}
+                      className="w-fit text-xs 
+                        bg-gray-100 text-gray-800 hover:bg-accent/50 border-gray-200 border"
                     >
                       {action.code}
                     </Badge>

@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { BadgeCheck, Loader, OctagonX } from "lucide-react";
+import { BadgeCheck, Ban, Loader, OctagonX } from "lucide-react";
 
 export type TravelRequest = {
   id: string;
@@ -23,38 +23,6 @@ export type TravelRequest = {
   approving_status: string | null;
   createdAt: Date;
 };
-
-// export type TravelRequest = {
-//   id: string;
-//   code: string;
-//   request_type: string;
-//   requester_id: {
-//     designation_id: {
-//       name: string;
-//     }
-//   };
-//   requester_name: string;
-//   position: string;
-//   purpose: string;
-//   host: string;
-//   travel_period: string;
-//   destination: string;
-//   fund_source: string;
-//   attached_file: string;
-//   authority_id: {
-//     recommending_authority_id: {
-//       name: string;
-//       position: string
-//     } | null
-//     approving_authority_id: {
-//       name: string;
-//       position: string;
-//     }
-//   }
-//   recommending_status: string | null;
-//   approving_status: string | null;
-//   createdAt: Date;
-// };
 
 export const columns: ColumnDef<TravelRequest>[] = [
   {
@@ -109,34 +77,52 @@ export const columns: ColumnDef<TravelRequest>[] = [
 
       if (status === "Disapproved") {
         return (
-          <Badge
-            className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 border font-semibold uppercase tracking-tighter"
-            variant="outline"
-          >
-            <OctagonX size={15} className="mr-2" />
-            Disapproved
-          </Badge>
+          <div className="gap-2">
+            <Badge
+              className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 border font-semibold uppercase tracking-tighter"
+              variant="outline"
+            >
+              <OctagonX size={14} className="mr-1" />
+              Disapproved
+            </Badge>
+          </div>
         );
       } else if (status === "Approved") {
         return (
-          <Badge
-            className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 border font-semibold uppercase tracking-tight"
-            variant="outline"
-          >
-            <BadgeCheck size={15} className="mr-2" />
-            Approved
-          </Badge>
+          <div className="items-center">
+            <Badge
+              className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 border font-semibold uppercase tracking-tighter"
+              variant="outline"
+            >
+              <BadgeCheck size={14} className="mr-1" />
+              Approved
+            </Badge>
+          </div>
+        );
+      } else if (status === "Cancelled") {
+        return (
+          <div className="items-center">
+            <Badge
+              className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200 border font-semibold uppercase tracking-tighter"
+              variant="outline"
+            >
+              <Ban size={14} className="mr-1" />
+              Cancelled
+            </Badge>
+          </div>
         );
       }
 
       return (
-        <Badge
-          className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border font-semibold uppercase tracking-tight"
-          variant="outline"
-        >
-          <Loader size={15} className="mr-2" />
-          Pending
-        </Badge>
+        <div className="items-center">
+          <Badge
+            className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border font-semibold uppercase tracking-tighter"
+            variant="outline"
+          >
+            <Loader size={14} className="mr-1"/>
+            Pending
+          </Badge>
+        </div>
       );
     },
   },
@@ -148,34 +134,52 @@ export const columns: ColumnDef<TravelRequest>[] = [
 
       if (status === "Disapproved") {
         return (
-          <Badge
-            className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 border font-semibold uppercase tracking-tighter"
-            variant="outline"
-          >
-            <OctagonX size={15} className="mr-2" />
-            Disapproved
-          </Badge>
+          <div className="gap-2">
+            <Badge
+              className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 border font-semibold uppercase tracking-tighter"
+              variant="outline"
+            >
+              <OctagonX size={14} className="mr-1" />
+              Disapproved
+            </Badge>
+          </div>
         );
       } else if (status === "Approved") {
         return (
-          <Badge
-            className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 border font-semibold uppercase tracking-tight"
-            variant="outline"
-          >
-            <BadgeCheck size={15} className="mr-2" />
-            Approved
-          </Badge>
+          <div className="items-center">
+            <Badge
+              className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 border font-semibold uppercase tracking-tighter"
+              variant="outline"
+            >
+              <BadgeCheck size={14} className="mr-1" />
+              Approved
+            </Badge>
+          </div>
+        );
+      } else if (status === "Cancelled") {
+        return (
+          <div className="items-center">
+            <Badge
+              className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200 border font-semibold uppercase tracking-tighter"
+              variant="outline"
+            >
+              <Ban size={14} className="mr-1" />
+              Cancelled
+            </Badge>
+          </div>
         );
       }
 
       return (
-        <Badge
-          className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border font-semibold uppercase tracking-tight"
-          variant="outline"
-        >
-          <Loader size={15} className="mr-2" />
-          Pending
-        </Badge>
+        <div className="items-center">
+          <Badge
+            className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border font-semibold uppercase tracking-tighter"
+            variant="outline"
+          >
+            <Loader size={14} className="mr-1" />
+            Pending
+          </Badge>
+        </div>
       );
     },
   },
