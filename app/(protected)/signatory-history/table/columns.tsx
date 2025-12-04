@@ -1,5 +1,6 @@
 "use client";
 
+import { codeClassMap } from "@/actions/helper-client";
 import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
@@ -16,17 +17,6 @@ export type ActionsHistory = {
     travel_period: string;
     purpose: string;
   };
-};
-
-const codeClassMap: Record<string, string> = {
-  CANCELLED: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200 border",
-  FORWARDED:
-    "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 border",
-  RECOMMENDED:
-    "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200 border",
-  APPROVED:
-    "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200 border",
-  DISAPPROVED: "bg-red-100 text-red-800 hover:bg-red-200 border-red-200 border",
 };
 
 export const columns: ColumnDef<any>[] = [

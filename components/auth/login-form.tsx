@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { LoginSchema } from "@/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -20,14 +19,12 @@ import { Button } from "../ui/button";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { login } from "@/actions/login";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { title } from "../fonts/font";
 
 export const LoginForm = () => {
-  const searchParams = useSearchParams();
   const router = useRouter();
   // const urlError =
   //   searchParams.get("error") === "OAuthAccountNotLinked"
@@ -136,7 +133,7 @@ export const LoginForm = () => {
                     <Input
                       {...field}
                       type="password"
-                      placeholder="Your secret password..."
+                      placeholder="******"
                       disabled={isPending}
                     />
                   </FormControl>

@@ -1,11 +1,8 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
-import { getUserById } from "./data/user";
 import prisma from "./lib/db";
 import { User, UserRole } from "@prisma/client";
-import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation";
-import { getAccountByUserId } from "./data/account";
 
 export const {
   handlers: { GET, POST },
@@ -50,6 +47,30 @@ export const {
 
       return !!user;
     },
+    async jwt({ token, user }) {
+      // if (!token.sub) return token;
+
+      // const existingUser = await getUserById(token.sub);
+
+      // if (!existingUser) return token;
+
+      // const existingAccount = await getAccountByUserId(existingUser.id);
+
+      // token.isOAuth = !!existingAccount;
+      // token.name = existingUser.name;
+      // token.email = existingUser.email;
+      // token.role = existingUser.role;
+      // token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
+
+      if (user) {
+        const prismaUser = user as User;
+        token.sub = prismaUser.id;
+        token.name = prismaUser.name;
+        token.email = prismaUser.email;
+        token.role = prismaUser.role;
+      }
+      return token;
+    },
     async session({ token, session }) {
       // if (token.sub && session.user) {
       //   session.user.id = token.sub;
@@ -72,36 +93,12 @@ export const {
       // return session;
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.role = token.role as UserRole;
         session.user.name = token.name;
         session.user.email = token.email as string;
+        session.user.role = token.role as UserRole;
       }
 
       return session;
-    },
-    async jwt({ token, user }) {
-      // if (!token.sub) return token;
-
-      // const existingUser = await getUserById(token.sub);
-
-      // if (!existingUser) return token;
-
-      // const existingAccount = await getAccountByUserId(existingUser.id);
-
-      // token.isOAuth = !!existingAccount;
-      // token.name = existingUser.name;
-      // token.email = existingUser.email;
-      // token.role = existingUser.role;
-      // token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
-
-      const prismaUser = user as User;
-      if (user) {
-        token.sub = prismaUser.id;
-        token.name = prismaUser.name;
-        token.email = prismaUser.email;
-        token.role = prismaUser.role;
-      }
-      return token;
     },
   },
   adapter: PrismaAdapter(prisma),

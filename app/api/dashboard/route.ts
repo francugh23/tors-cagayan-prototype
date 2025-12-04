@@ -275,7 +275,7 @@ export async function GET() {
 
     // ----- CASE: SCHOOL_HEAD (approving OR recommending within their school) -----
     else if (positionType === PositionType.SCHOOL_HEAD) {
-      const baseWhere = {
+      const _baseWhere = {
         requester: { designation_id: designationId },
         OR: [
           // Case 1: Acting as recommending authority

@@ -10,7 +10,7 @@ import { FaUser } from "react-icons/fa";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { LogoutButton } from "./logout-button";
-import { ChevronsUpDown, LogOut, User } from "lucide-react";
+import { ChevronsUpDown, LogOut } from "lucide-react";
 import { SidebarMenuButton } from "../ui/sidebar";
 
 export const UserButton = () => {

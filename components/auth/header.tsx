@@ -1,33 +1,18 @@
-// import { Poppins } from "next/font/google";
-// import { cn } from "@/lib/utils";
 import Image from "next/image";
-import logo from "@/public/logo-cagayan.jpg"
-
-// const font = Poppins({
-//   subsets: ['latin'],
-//   weight: ["400"]
-// })
+import logo from "@/public/trax_logo.png";
 
 interface HeaderProps {
-  label: string
+  label: string;
 }
 
-export const Header = ({
-  label
-} : HeaderProps) => {
+export const Header = ({}: HeaderProps) => {
   return (
     <div className="w-full flex flex-col items-center justify-center">
       {/* <h1 className={cn("text-3xl font-semibold drop-shadow-md", font)}>
         eTravelOrder
       </h1> */}
-      <Image
-        src={logo}
-        alt="TORS"
-        width={150}
-        height={150}
-        loading="lazy"
-      />
+      <Image src={logo} alt="TORS" width={150} height={150} loading="lazy" />
       {/* <p className={cn("text-muted-foreground text-sm", font.className)}>{label}</p> */}
     </div>
   );
-}
+};

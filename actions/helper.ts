@@ -1,4 +1,3 @@
-import prisma from "@/lib/db";
 import { format } from "date-fns";
 
 export const formatTravelPeriod = (travelPeriod: string): string => {

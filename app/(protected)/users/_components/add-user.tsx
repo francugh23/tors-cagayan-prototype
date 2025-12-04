@@ -2,14 +2,11 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ChevronsUpDown,
-  UserPlus2,
-} from "lucide-react";
+import { UserPlus2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,21 +43,10 @@ import { PositionType, UserRole } from "@prisma/client";
 import { AddUserSchema } from "@/schemas";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-  CommandEmpty,
-} from "@/components/ui/command";
 import { useCreateUser } from "@/hooks/use-functions-user";
 import { useDesignations } from "@/hooks/use-designations";
 import { usePositions } from "@/hooks/use-positions";
+import { DesignationPopover } from "./designation-popover";
 
 interface AddUserDialogProps {
   onUpdate: () => void;
@@ -68,7 +54,11 @@ interface AddUserDialogProps {
 
 export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
   const [open, setOpen] = useState(false);
-  const disabledRoles: UserRole[] = [UserRole.ACCOUNT_HOLDER, UserRole.ADMIN];
+
+  const disabledRoles: UserRole[] = useMemo(
+    () => [UserRole.ACCOUNT_HOLDER, UserRole.ADMIN],
+    []
+  );
   const { data: positions = [] } = usePositions();
   const { data: designations = [] } = useDesignations();
 
@@ -102,7 +92,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
 
   async function onSubmit(data: z.infer<typeof AddUserSchema>) {
     await createUserMutation.mutateAsync(data);
-  };
+  }
 
   return (
     <Dialog
@@ -114,12 +104,13 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
         setOpen(newOpen);
       }}
     >
-      <DialogTrigger asChild>
+      <DialogTrigger asChild inert={open}>
         <Button
           className={cn(
             "bg-primary hover:bg-primary/90 uppercase",
             title.className
           )}
+          size={"sm"}
         >
           <UserPlus2 className="mr-2 h-4 w-4" />
           Add User
@@ -280,65 +271,20 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
                 <FormField
                   control={form.control}
                   name="designation_id"
-                  render={({ field }) => {
-                    const [open, setOpen] = useState(false);
-                    const selected = designations.find(
-                      (d: any) => d.id === field.value
-                    );
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Division/Section/Unit/School
+                      </FormLabel>
 
-                    return (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">
-                          Division/Section/Unit/School
-                        </FormLabel>
+                      <DesignationPopover
+                        field={field}
+                        designations={designations}
+                      />
 
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className="w-full justify-between truncate font-normal"
-                            >
-                              <span className="truncate">
-                                {selected
-                                  ? selected.name
-                                  : "Select a designation"}
-                              </span>
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-
-                          <PopoverContent
-                            align="start"
-                            sideOffset={4}
-                            className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[300px] overflow-y-auto"
-                          >
-                            <Command>
-                              <CommandInput placeholder="Search designation..." />
-                              <CommandList className="overflow-y-hidden">
-                                <CommandEmpty>
-                                  No designations found.
-                                </CommandEmpty>
-                                {designations.map((d: any) => (
-                                  <CommandItem
-                                    key={d.id}
-                                    onSelect={() => {
-                                      field.onChange(d.id);
-                                      setOpen(false);
-                                    }}
-                                  >
-                                    {d.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </div>
@@ -347,6 +293,7 @@ export function AddUserDialog({ onUpdate }: AddUserDialogProps) {
               <Button
                 type="submit"
                 className="bg-primary hover:bg-primary/90 w-full"
+                size={"sm"}
               >
                 Create
               </Button>

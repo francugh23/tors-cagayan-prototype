@@ -105,7 +105,7 @@ export function DataTable<TData, TValue>({
                           )}
                         </TableCell>
                       }
-                      // @ts-expect-error
+                      // @ts-expect-error: This column filter type is incompatible but works at runtime
                       travelDetails={row.original}
                       onUpdate={onUpdate}
                     />

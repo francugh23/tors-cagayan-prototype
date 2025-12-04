@@ -377,6 +377,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 onClick={() => {
                   form.reset();
                 }}
+                size={"sm"}
               >
                 Reset
               </Button>
@@ -385,6 +386,7 @@ export function ClientForm({ user, label }: ClientFormProps) {
                 variant={"default"}
                 className={cn("hover:bg-primary/90 w-full", title.className)}
                 disabled={isPending}
+                size={"sm"}
               >
                 {isPending ? (
                   <>

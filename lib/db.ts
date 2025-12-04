@@ -1,4 +1,4 @@
-//@ts-nocheck
+// @ts-nocheck: Prevent TypeScript errors for global Prisma declaration
 import { PrismaClient } from "@prisma/client";
 
 let prisma: PrismaClient;

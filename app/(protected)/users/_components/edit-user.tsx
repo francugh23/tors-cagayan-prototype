@@ -2,11 +2,11 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BadgeCheck, TriangleAlert } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,26 +43,13 @@ import { PositionType, UserRole } from "@prisma/client";
 import { EditUserSchema } from "@/schemas";
 import { cn } from "@/lib/utils";
 import { title, description } from "@/components/fonts/font";
-import { fetchPositions, fetchDesignations } from "@/data/user";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-  CommandEmpty,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
-import { resetUserPassword, updateUser } from "@/actions/user-actions";
+import { resetUserPassword } from "@/actions/user-actions";
 import { DeleteUserPopover } from "./delete-user";
 import { usePositions } from "@/hooks/use-positions";
 import { useDesignations } from "@/hooks/use-designations";
 import { useUpdateUser } from "@/hooks/use-functions-user";
+import { DesignationPopover } from "./designation-popover";
 
 interface EditUserDialogProps {
   onUpdate: () => void;
@@ -112,8 +99,10 @@ export function EditUserDialog({
         setOpen(newOpen);
       }}
     >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogTrigger asChild inert={open}>
+        {trigger}
+      </DialogTrigger>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className={cn("text-2xl font-bold", title.className)}>
             Edit User
@@ -264,67 +253,20 @@ export function EditUserDialog({
                 <FormField
                   control={form.control}
                   name="designation_id"
-                  render={({ field }) => {
-                    const [open, setOpen] = useState(false);
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Division/Section/Unit/School
+                      </FormLabel>
 
-                    // Find selected designation object
-                    const selected = designations.find(
-                      (d: any) => d.id === field.value
-                    );
+                      <DesignationPopover
+                        field={field}
+                        designations={designations}
+                      />
 
-                    return (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">
-                          Division/Section/Unit/School
-                        </FormLabel>
-
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className="w-full justify-between truncate font-normal"
-                            >
-                              <span className="truncate">
-                                {selected
-                                  ? selected.name
-                                  : "Select a designation"}
-                              </span>
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-
-                          <PopoverContent
-                            align="start"
-                            sideOffset={4}
-                            className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[300px] overflow-y-auto"
-                          >
-                            <Command>
-                              <CommandInput placeholder="Search designation..." />
-                              <CommandList className="overflow-y-hidden">
-                                <CommandEmpty>
-                                  No designations found.
-                                </CommandEmpty>
-                                {designations.map((d: any) => (
-                                  <CommandItem
-                                    key={d.id}
-                                    onSelect={() => {
-                                      field.onChange(d.id);
-                                      setOpen(false);
-                                    }}
-                                  >
-                                    {d.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </div>

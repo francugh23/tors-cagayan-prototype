@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 // import Github from "next-auth/providers/github";
 
 export default {
+  trustHost: true,
   providers: [
     // Google({
     //   clientId: process.env.GOOGLE_CLIENT_ID,

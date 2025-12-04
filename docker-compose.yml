@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mysql:
     image: mysql:8.0
@@ -20,24 +18,15 @@ services:
       timeout: 5s
       retries: 10
 
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: to_n8n
+  gotenberg:
+    image: thecodingmachine/gotenberg:8
+    container_name: gotenberg
     restart: unless-stopped
     ports:
-      - "5678:5678"
-    environment:
-      # (you can enable auth in production)
-      N8N_BASIC_AUTH_ACTIVE: "false"
-      GENERIC_TIMEZONE: "Asia/Manila"
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      - "4000:3000" # host port 4000 → container port 3000
     volumes:
-      - n8n-data:/home/node/.n8n
-    depends_on:
-      mysql:
-        condition: service_healthy
+      - gotenberg-data:/gotenberg
 
 volumes:
   mysql-data:
-  n8n-data:
+  gotenberg-data:

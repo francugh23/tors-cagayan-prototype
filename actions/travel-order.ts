@@ -275,7 +275,7 @@ export const createTravelOrder = async (
 
     await prisma.actions.create({
       data: {
-        code: `REQUEST`,
+        code: `REQUESTED`,
         travel_order_id: travel_order.id,
         action: `${user?.user?.name} requested a travel order.`,
         user_id: user?.user?.id as string,
@@ -399,6 +399,143 @@ export const updateTravelRequestById = async (data: {
   } catch (error) {
     console.error("Approval error:", error);
     return { error: "Failed to approve travel order request!", details: error };
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const updateTravelRequestsByIds = async (data: {
+  ids: string[];
+  userId: string;
+}) => {
+  try {
+    await prisma.$connect();
+
+    const user = await prisma.user.findUnique({
+      where: { id: data.userId },
+      select: { position_id: true, name: true },
+    });
+
+    if (!user?.position_id) {
+      return { error: "User position not found!" };
+    }
+
+    const travelOrders = await prisma.travelOrder.findMany({
+      where: { id: { in: data.ids } },
+      include: {
+        authority: {
+          include: { recommending_position: true, approving_position: true },
+        },
+      },
+    });
+
+    if (travelOrders.length === 0) {
+      return { error: "No travel requests found!" };
+    }
+
+    const updates: {
+      where: { id: string };
+      data: Partial<{
+        code: string;
+        recommending_status: string;
+        approving_status: string;
+        updatedAt: Date;
+      }>;
+    }[] = [];
+
+    const actions: {
+      code: string;
+      travel_order_id: string;
+      action: string;
+      user_id: string;
+      createdAt: Date;
+    }[] = [];
+
+    const results: { id: string; success?: string; error?: string }[] = [];
+
+    for (const travelOrder of travelOrders) {
+      let isRecommending =
+        travelOrder.authority?.recommending_position_id === user.position_id;
+      let isApproving =
+        travelOrder.authority?.approving_position_id === user.position_id;
+
+      if (!isRecommending && !isApproving) {
+        results.push({
+          id: travelOrder.id,
+          error: "No permissions to approve this travel order.",
+        });
+        continue;
+      }
+
+      let updateData: any = {};
+
+      // RECOMMENDING
+      if (isRecommending) {
+        if (travelOrder.recommending_status !== "Pending") {
+          results.push({
+            id: travelOrder.id,
+            error: "Recommendation already processed.",
+          });
+          continue;
+        }
+        updateData.recommending_status = "Approved";
+        updateData.code = `${travelOrder.code}-R`;
+
+        actions.push({
+          code: "RECOMMENDED",
+          travel_order_id: travelOrder.id,
+          action: `${user.name} recommended a travel order request.`,
+          user_id: data.userId,
+          createdAt: new Date(),
+        });
+      }
+
+      // APPROVING
+      if (isApproving) {
+        if (
+          travelOrder.approving_status !== "Pending" &&
+          travelOrder.approving_status !== null
+        ) {
+          results.push({
+            id: travelOrder.id,
+            error: "Approval already processed",
+          });
+          continue;
+        }
+        updateData.approving_status = "Approved";
+        if (!updateData.recommending_status) {
+          updateData.recommending_status = travelOrder.recommending_status;
+        }
+        updateData.code = `${travelOrder.code}A`;
+
+        actions.push({
+          code: "APPROVED",
+          travel_order_id: travelOrder.id,
+          action: `${user.name} approved a travel order request.`,
+          user_id: data.userId,
+          createdAt: new Date(),
+        });
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        updateData.updatedAt = new Date();
+        updates.push({ where: { id: travelOrder.id }, data: updateData });
+        results.push({ id: travelOrder.id, success: "Travel orders processed." });
+      }
+    }
+
+    // Bulk updates
+    await Promise.all(updates.map((u) => prisma.travelOrder.update(u)));
+
+    // Bulk actions
+    if (actions.length > 0) {
+      await prisma.actions.createMany({ data: actions });
+    }
+
+    return { results };
+  } catch (error) {
+    console.error("Approval error:", error);
+    return { error: "Failed to approve travel order requests", details: error };
   } finally {
     await prisma.$disconnect();
   }

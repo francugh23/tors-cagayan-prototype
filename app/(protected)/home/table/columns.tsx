@@ -119,7 +119,7 @@ export const columns: ColumnDef<TravelRequest>[] = [
             className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 border font-semibold uppercase tracking-tighter"
             variant="outline"
           >
-            <Loader size={14} className="mr-1"/>
+            <Loader size={14} className="mr-1" />
             Pending
           </Badge>
         </div>

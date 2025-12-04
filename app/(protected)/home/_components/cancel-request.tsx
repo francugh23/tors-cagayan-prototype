@@ -54,7 +54,6 @@ export function CancelRemarksModal({
   async function onSubmit(data: z.infer<typeof RemarksSchema>) {
     try {
       const result = await cancelTravelRequestOrderById(data);
-
       if (result?.error) {
         toast("Oops", {
           description: result?.error || "An error occurred!",
@@ -72,7 +71,7 @@ export function CancelRemarksModal({
       }
     } catch (error) {
       toast("Oops!", {
-        description: "An unexpected error occurred. Please try again.",
+        description: `An unexpected error occurred. Please try again. ${error}`,
         duration: 5000,
         icon: <TriangleAlert size={20} />,
       });

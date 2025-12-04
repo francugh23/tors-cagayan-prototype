@@ -1,51 +1,51 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Loader } from "lucide-react";
 import type { Table } from "@tanstack/react-table";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "@/components/data-table/faceted-filter";
 import { useState, useEffect } from "react";
-
-function useDebounce<T>(value: T, delay = 300): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
-}
+import { useDebounce } from "@/actions/helper-client";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  fetchFilteredResults?: (query: string) => Promise<void>; // async server fetch
 }
 
 export function DataTableToolbar<TData>({
   table,
+  fetchFilteredResults,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const [search, setSearch] = useState(
     (table.getColumn("requester_name")?.getFilterValue() as string) ?? ""
   );
-  const debouncedSearch = useDebounce(search, 300);
+
+  const debouncedSearch = useDebounce(search, 150);
 
   useEffect(() => {
-    table.getColumn("requester_name")?.setFilterValue(debouncedSearch);
-  }, [debouncedSearch, table]);
+    table.getColumn("requester_name")?.setFilterValue(search);
+  }, [search, table]);
+
+  useEffect(() => {
+    if (!fetchFilteredResults) return;
+    fetchFilteredResults(debouncedSearch);
+  }, [debouncedSearch, fetchFilteredResults]);
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-1 items-center space-x-2">
-        <Input
-          placeholder="Search requester's name..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="h-9 w-full sm:w-[250px]"
-        />
+        <div className="relative w-full sm:w-[250px]">
+          <Input
+            placeholder="Search requester's name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full"
+          />
+        </div>
+
         {isFiltered && (
           <Button
             variant="ghost"
@@ -60,10 +60,11 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
+
       <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-        {(table.getColumn("recommending_status") || table.getColumn("approving_status")) && (
+        {table.getColumn("recommending_status") && (
           <DataTableFacetedFilter
-            column={table.getColumn("recommending_status") || table.getColumn("approving_status")}
+            column={table.getColumn("recommending_status")}
             title="Status"
             options={[
               { label: "Pending", value: "Pending" },
@@ -73,9 +74,6 @@ export function DataTableToolbar<TData>({
             ]}
           />
         )}
-        {/* <div className="flex items-center space-x-2">
-          <DataTableViewOptions table={table} />
-        </div> */}
       </div>
     </div>
   );

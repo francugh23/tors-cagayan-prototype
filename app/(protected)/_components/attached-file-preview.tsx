@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { FileStack } from "lucide-react";
-import { title, description } from "@/components/fonts/font";
+import { title } from "@/components/fonts/font";
 import { cn } from "@/lib/utils";
 
 export const FilePreview = ({ fileUrl }: { fileUrl?: string | null }) => {

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ChevronRight,
   Layers,
   Home,
   LucideIcon,
@@ -20,14 +19,10 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuSub,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CollapsibleContent } from "@radix-ui/react-collapsible";
 import { usePathname, useRouter } from "next/navigation";
 import AppSidebarFooter from "./sidebar-footer";
 import { UserRole } from "@prisma/client";
@@ -47,7 +42,7 @@ export function AppSidebar() {
         <section className="w-full h-full flex gap-1 justify-center items-center">
           <span>
             <Image
-              src="/logo-cagayan.png"
+              src="/trax_logo.png"
               alt="App Logo"
               width={200}
               height={200}
@@ -193,64 +188,64 @@ function SidebarMenuSingle({ menuItems }: SidebarMenuSingleProps) {
 }
 
 // SidebarMenuCollapsible.tsx
-type SidebarMenuSubItem = {
-  title: string;
-  icon?: LucideIcon;
-  url: string;
-};
-interface SidebarMenuCollapsible {
-  menuTitle?: string;
-  menuIcon?: LucideIcon;
-  subMenus?: SidebarMenuSubItem[];
-}
-function SidebarMenuCollapsible({
-  menuTitle,
-  menuIcon: Icon,
-  subMenus,
-}: SidebarMenuCollapsible) {
-  const router = useRouter();
-  const pathname = usePathname();
-  return (
-    <>
-      <SidebarMenu>
-        <Collapsible defaultOpen className="group/collapsible">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className="peer-data-[active=true]/menu-button:opacity-100 hover:bg-gray-100 active:bg-gray-200"
-              asChild
-            >
-              <CollapsibleTrigger className="flex items-center gap-2 hover:text-primary active:text-secondary">
-                {Icon && <Icon size={16} />}
-                {menuTitle || ""}
-                <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-              </CollapsibleTrigger>
-            </SidebarMenuButton>
-            <CollapsibleContent>
-              <SidebarMenuSub>
-                {subMenus?.map((subMenu, index) => {
-                  const isActive = pathname === subMenu.url;
+// type SidebarMenuSubItem = {
+//   title: string;
+//   icon?: LucideIcon;
+//   url: string;
+// };
+// interface SidebarMenuCollapsible {
+//   menuTitle?: string;
+//   menuIcon?: LucideIcon;
+//   subMenus?: SidebarMenuSubItem[];
+// }
+// function SidebarMenuCollapsible({
+//   menuTitle,
+//   menuIcon: Icon,
+//   subMenus,
+// }: SidebarMenuCollapsible) {
+//   const router = useRouter();
+//   const pathname = usePathname();
+//   return (
+//     <>
+//       <SidebarMenu>
+//         <Collapsible defaultOpen className="group/collapsible">
+//           <SidebarMenuItem>
+//             <SidebarMenuButton
+//               className="peer-data-[active=true]/menu-button:opacity-100 hover:bg-gray-100 active:bg-gray-200"
+//               asChild
+//             >
+//               <CollapsibleTrigger className="flex items-center gap-2 hover:text-primary active:text-secondary">
+//                 {Icon && <Icon size={16} />}
+//                 {menuTitle || ""}
+//                 <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+//               </CollapsibleTrigger>
+//             </SidebarMenuButton>
+//             <CollapsibleContent>
+//               <SidebarMenuSub>
+//                 {subMenus?.map((subMenu, index) => {
+//                   const isActive = pathname === subMenu.url;
 
-                  return (
-                    <SidebarMenuSubItem key={index}>
-                      <SidebarMenuButton
-                        onClick={() => router.push(subMenu.url)}
-                        className={`flex items-center gap-2 transition-all ease-in-out duration-300 hover:text-green-700 hover:bg-gray-50 ${
-                          isActive
-                            ? "bg-gray-100 text-green-700"
-                            : "active:bg-green-100 active:text-secondary"
-                        }`}
-                      >
-                        {subMenu.icon && <subMenu.icon />}
-                        {subMenu.title}
-                      </SidebarMenuButton>
-                    </SidebarMenuSubItem>
-                  );
-                })}
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </SidebarMenuItem>
-        </Collapsible>
-      </SidebarMenu>
-    </>
-  );
-}
+//                   return (
+//                     <SidebarMenuSubItem key={index}>
+//                       <SidebarMenuButton
+//                         onClick={() => router.push(subMenu.url)}
+//                         className={`flex items-center gap-2 transition-all ease-in-out duration-300 hover:text-green-700 hover:bg-gray-50 ${
+//                           isActive
+//                             ? "bg-gray-100 text-green-700"
+//                             : "active:bg-green-100 active:text-secondary"
+//                         }`}
+//                       >
+//                         {subMenu.icon && <subMenu.icon />}
+//                         {subMenu.title}
+//                       </SidebarMenuButton>
+//                     </SidebarMenuSubItem>
+//                   );
+//                 })}
+//               </SidebarMenuSub>
+//             </CollapsibleContent>
+//           </SidebarMenuItem>
+//         </Collapsible>
+//       </SidebarMenu>
+//     </>
+//   );
+// }

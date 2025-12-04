@@ -20,29 +20,29 @@ export async function passwordGenerator() {
   return password;
 }
 
-export async function codeGenerator() {
-  const randomLetters = () =>
-    String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
-    String.fromCharCode(65 + Math.floor(Math.random() * 26));
-  const randomNumbers = () =>
-    String(Math.floor(Math.random() * 1000)).padStart(3, "0");
-  const date = new Date();
-  const datePart = `${String(date.getDate()).padStart(2, "0")}${String(
-    date.getMonth() + 1
-  ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}`;
+// export async function codeGenerator() {
+//   const randomLetters = () =>
+//     String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
+//     String.fromCharCode(65 + Math.floor(Math.random() * 26));
+//   const randomNumbers = () =>
+//     String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+//   const date = new Date();
+//   const datePart = `${String(date.getDate()).padStart(2, "0")}${String(
+//     date.getMonth() + 1
+//   ).padStart(2, "0")}${String(date.getFullYear()).slice(-2)}`;
 
-  let code;
-  while (true) {
-    code = `${datePart}-${randomLetters()}${randomNumbers()}`;
-    const exists = await prisma.actions.findMany({
-      where: { code },
-      select: { id: true },
-    });
-    if (!exists.length) break;
-  }
+//   let code;
+//   while (true) {
+//     code = `${datePart}-${randomLetters()}${randomNumbers()}`;
+//     const exists = await prisma.actions.findMany({
+//       where: { code },
+//       select: { id: true },
+//     });
+//     if (!exists.length) break;
+//   }
 
-  return code;
-}
+//   return code;
+// }
 
 export const createUser = async (values: z.infer<typeof AddUserSchema>) => {
   const user = await getCurrentUser();
@@ -80,7 +80,7 @@ export const createUser = async (values: z.infer<typeof AddUserSchema>) => {
 
     await prisma.actions.create({
       data: {
-        code: `CRE-${await codeGenerator()}`,
+        code: `CREATED`,
         user_id: user.uid || "",
         action: `Created new user: ${name} - ${email}.`,
       },
@@ -121,7 +121,7 @@ export const updateUser = async (data: z.infer<typeof EditUserSchema>) => {
 
     await prisma.actions.create({
       data: {
-        code: `UPD-${await codeGenerator()}`,
+        code: `UPDATED`,
         user_id: user.uid || "",
         action: `Updated user: ${name}.`,
       },
@@ -146,7 +146,7 @@ export async function deleteUserById(id: string) {
 
     await prisma.actions.create({
       data: {
-        code: `DEL-${await codeGenerator()}`,
+        code: `DELETED`,
         user_id: user.uid || "",
         action: `Deleted user: ${u.name}.`,
       },
@@ -177,7 +177,7 @@ export async function resetUserPassword(id: string) {
 
     await prisma.actions.create({
       data: {
-        code: `RES-${await codeGenerator()}`,
+        code: `RESET`,
         user_id: user.uid || "",
         action: `Reset password for: ${u.name}.`,
       },

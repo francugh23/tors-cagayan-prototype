@@ -4,10 +4,43 @@ import { DataTableColumnHeader } from "@/components/data-table/column-header";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { BadgeCheck, Ban, Loader, OctagonX } from "lucide-react";
+import { ArrowUpDown, BadgeCheck, Ban, Loader, OctagonX } from "lucide-react";
 import { TravelRequest } from "../../home/table/columns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 export const columns: ColumnDef<TravelRequest>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "id",
+    header: () => (
+      <div className="text-center" hidden>
+        #
+      </div>
+    ),
+    cell: ({ row }) => <div hidden>{row.getValue("id")}</div>,
+  },
   {
     accessorKey: "code",
     header: ({ column }) => (
@@ -48,7 +81,9 @@ export const columns: ColumnDef<TravelRequest>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Purpose" />
     ),
-    cell: ({ row }) => <div className="uppercase">{row.getValue("purpose")}</div>,
+    cell: ({ row }) => (
+      <div className="uppercase">{row.getValue("purpose")}</div>
+    ),
   },
   {
     accessorKey: "recommending_status",
@@ -72,7 +107,7 @@ export const columns: ColumnDef<TravelRequest>[] = [
         return (
           <div className="items-center">
             <Badge
-              className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 border font-semibold uppercase tracking-tighter"
+              className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200 border font-semibold uppercase tracking-tighter"
               variant="outline"
             >
               <BadgeCheck size={14} className="mr-1" />
@@ -166,7 +201,20 @@ export const columns: ColumnDef<TravelRequest>[] = [
   },
   {
     accessorKey: "createdAt",
-    header: () => <div className="text-right text-xs">Date/Time Submitted</div>,
+    header: ({ column }) => {
+      return (
+        <div className="text-right gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="text-right text-xs"
+          >
+            Date/Time Submitted
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    },
     cell: (row) => (
       <div className="text-right">
         {format(new Date(row.getValue() as string), "MMM dd, yyyy hh:mm a")}

@@ -24,6 +24,8 @@ import {
 import { DataTableToolbar } from "@/app/(protected)/signatory/table/toolbar";
 import { DataTablePaginationNoCheckBox } from "@/components/data-table/pagination-no-checkbox";
 import { ViewTravelRequestDialog } from "../_components/view-travel-request";
+import { useSetAtom } from "jotai";
+import { idsToUpdateAtom } from "../_components/atom";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -36,7 +38,9 @@ export function DataTable<TData, TValue>({
   data,
   onUpdate,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = React.useState({});
+  const [rowSelection, setRowSelection] = React.useState<
+    Record<string, boolean>
+  >({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -64,10 +68,23 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const setIdsToUpdate = useSetAtom(idsToUpdateAtom);
+  React.useEffect(() => {
+    const selectedRowIds = Object.keys(rowSelection)
+      .filter((rowId) => rowSelection[rowId])
+      .map((rowId) => {
+        const row = table.getRowModel().rows.find((r) => r.id === rowId);
+        return (row?.original as any)?.id;
+      })
+      .filter((id) => id !== undefined);
+
+    setIdsToUpdate(selectedRowIds);
+  }, [rowSelection]);
+
   return (
     <div className="space-y-4 my-2">
       <DataTableToolbar table={table} />
-      <div className="rounded-md border">
+      <div className="rounded-md border p-2">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -94,7 +111,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {/* {row.getVisibleCells().map((cell) => (
                     <ViewTravelRequestDialog
                       key={cell.id}
                       trigger={
@@ -108,7 +125,32 @@ export function DataTable<TData, TValue>({
                       travelDetails={row.original}
                       onUpdate={onUpdate}
                     />
-                  ))}
+                  ))} */}
+
+                  {row.getVisibleCells().map((cell) => {
+                    const cellContent = (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    );
+
+                    const isSelecting =
+                      table.getFilteredSelectedRowModel().rows.length > 0;
+
+                    if (isSelecting) return cellContent;
+
+                    return (
+                      <ViewTravelRequestDialog
+                        key={cell.id}
+                        trigger={cellContent}
+                        travelDetails={row.original}
+                        onUpdate={onUpdate}
+                      />
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (
@@ -123,6 +165,12 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center space-x-2 mt-4 text-xs">
+        <div className="flex-1 text-xs text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} request(s) selected.
+        </div>
       </div>
       <DataTablePaginationNoCheckBox table={table} />
     </div>

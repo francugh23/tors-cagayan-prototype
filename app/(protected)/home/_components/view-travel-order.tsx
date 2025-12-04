@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TravelRequest } from "../table/columns";
-import { FaFileWord, FaHotel, FaUsers } from "react-icons/fa";
+import { FaFilePdf, FaHotel, FaUsers } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { title, description } from "@/components/fonts/font";
 import { cn } from "@/lib/utils";
@@ -359,7 +359,7 @@ export function ViewTravelOrderDialog({
               disabled={isPending}
               size={"sm"}
             >
-              <FaFileWord className="h-4 w-4" />
+              <FaFilePdf className="h-4 w-4" />
               {isPending
                 ? "Preparing Download..."
                 : "Download Travel Authority"}
