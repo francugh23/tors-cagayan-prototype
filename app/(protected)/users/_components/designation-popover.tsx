@@ -30,7 +30,7 @@ export function DesignationPopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={true}>
-      <PopoverTrigger asChild inert={open}>
+      <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"

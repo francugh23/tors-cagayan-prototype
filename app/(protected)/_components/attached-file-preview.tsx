@@ -25,6 +25,7 @@ export const FilePreview = ({ fileUrl }: { fileUrl?: string | null }) => {
 
     if (isImage) {
       return (
+        // @ts-nocheck
         <img
           src={embedUrl}
           alt="Attached File"

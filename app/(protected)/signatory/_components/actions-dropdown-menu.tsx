@@ -24,13 +24,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { PositionType } from "@prisma/client";
 
 type ActionType = "recommend" | "approve" | "forward" | "disapprove" | null;
 
 export function ActionsDropdownMenu() {
-  const user = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [actionType, setActionType] = useState<ActionType>(null);
 

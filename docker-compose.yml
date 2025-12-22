@@ -9,7 +9,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-to_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-to_password}
     ports:
-      - "3306:3306"
+      - "3306:3306"   # unchanged (still accessible for GUI tools)
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -23,9 +23,23 @@ services:
     container_name: gotenberg
     restart: unless-stopped
     ports:
-      - "4000:3000" # host port 4000 → container port 3000
+      - "4000:3000"
     volumes:
       - gotenberg-data:/gotenberg
+
+  nextjs:
+    build: .
+    container_name: nextjs_app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER:-to_user}:${MYSQL_PASSWORD:-to_password}@mysql:3306/${MYSQL_DATABASE:-travel_order_dev}
+      GOTENBERG_URL: http://gotenberg:3000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
 
 volumes:
   mysql-data:
