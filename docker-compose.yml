@@ -8,8 +8,8 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-travel_order_dev}
       MYSQL_USER: ${MYSQL_USER:-to_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-to_password}
-    #ports:
-    # - "3306:3306"   # unchanged (still accessible for GUI tools)
+    ports:
+      - "3306:3306" # unchanged (still accessible for GUI tools)
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -31,8 +31,8 @@ services:
     image: thecodingmachine/gotenberg:8
     container_name: gotenberg
     restart: unless-stopped
-    # ports:
-    #  - "4000:3000"
+    ports:
+      - "4000:3000"
     volumes:
       - gotenberg-data:/gotenberg
 
@@ -47,8 +47,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    #ports:
-    # - "3000:3000"
+    ports:
+      - "3000:3000"
 
 volumes:
   mysql-data:
