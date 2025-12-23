@@ -31,8 +31,8 @@ services:
     image: thecodingmachine/gotenberg:8
     container_name: gotenberg
     restart: unless-stopped
-    ports:
-      - "4000:3000"
+    # ports:
+    #  - "4000:3000"
     volumes:
       - gotenberg-data:/gotenberg
 
