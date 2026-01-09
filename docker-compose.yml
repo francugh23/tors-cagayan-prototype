@@ -8,6 +8,8 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-travel_order_dev}
       MYSQL_USER: ${MYSQL_USER:-to_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-to_password}
+    ports:
+      - "3306:3306" # unchanged (still accessible for GUI tools)
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -24,30 +26,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    networks:
-      - internal_net
-
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: trax_phpmyadmin
-    environment:
-      PMA_HOST: mysql
-      PMA_USER: ${MYSQL_USER:-to_user}
-      PMA_PASSWORD: ${MYSQL_PASSWORD:-to_password}
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - internal_net
 
   gotenberg:
     image: thecodingmachine/gotenberg:8
     container_name: gotenberg
     restart: unless-stopped
+    ports:
+      - "4000:3000"
     volumes:
       - gotenberg-data:/gotenberg
-    networks:
-      - internal_net
 
   nextjs:
     build: .
@@ -60,15 +47,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    expose:
-      - "3000"   # ✅ internal only
-    networks:
-      - internal_net
-
-networks:
-  internal_net:
-    driver: bridge
-    internal: true
+    ports:
+      - "3000:3000"
 
 volumes:
   mysql-data:
