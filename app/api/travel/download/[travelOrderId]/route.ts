@@ -81,7 +81,7 @@ export async function GET(
     form.append("files", fileBlob, `${to.code}.docx`);
 
     const response = await fetch(
-      "http://localhost:4000/forms/libreoffice/convert",
+      `http://gotenberg:3000/forms/libreoffice/convert`,
       {
         method: "POST",
         body: form,
