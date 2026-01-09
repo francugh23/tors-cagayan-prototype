@@ -9,7 +9,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-to_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-to_password}
     ports:
-      - "3306:3306" # unchanged (still accessible for GUI tools)
+      - "3307:3306" # unchanged (still accessible for GUI tools)
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
