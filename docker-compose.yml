@@ -1,15 +1,12 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: to_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-travel_order_dev}
       MYSQL_USER: ${MYSQL_USER:-to_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-to_password}
-    ports:
-      - "3307:3306" # unchanged (still accessible for GUI tools)
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -26,19 +23,31 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - internal_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: ${MYSQL_USER:-to_user}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-to_password}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - internal_net
 
   gotenberg:
     image: thecodingmachine/gotenberg:8
-    container_name: gotenberg
     restart: unless-stopped
-    ports:
-      - "4000:3000"
     volumes:
       - gotenberg-data:/gotenberg
+    networks:
+      - internal_net
 
   nextjs:
     build: .
-    container_name: nextjs_app
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -47,8 +56,14 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
+    networks:
+      - internal_net
+
+networks:
+  internal_net:
+    driver: bridge
 
 volumes:
   mysql-data:
